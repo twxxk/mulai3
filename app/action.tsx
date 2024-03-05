@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { OpenAI } from "openai";
 import { createAI, getMutableAIState, render } from "ai/rsc";
 import { z } from "zod";

@@ -13,8 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html>
-      <body>
+    // suppressHydrationWarnings to deal with grammarly and other extentions
+    // https://stackoverflow.com/questions/75337953/what-causes-nextjs-warning-extra-attributes-from-the-server-data-new-gr-c-s-c    
+    <html suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <AI>
           {children}
         </AI>
@@ -22,3 +24,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+export const runtime = 'edge';
