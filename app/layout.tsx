@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AI } from "./action";
 import "./globals.css";
  
 export const metadata: Metadata = {
@@ -17,9 +16,7 @@ export default function RootLayout({
     // https://stackoverflow.com/questions/75337953/what-causes-nextjs-warning-extra-attributes-from-the-server-data-new-gr-c-s-c    
     <html suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <AI>
-          {children}
-        </AI>
+        {children}
       </body>
     </html>
   );

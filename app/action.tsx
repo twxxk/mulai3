@@ -1,5 +1,3 @@
-import 'server-only';
-
 import { OpenAI } from "openai";
 import { createAI, getMutableAIState, render } from "ai/rsc";
 import { z } from "zod";
@@ -15,25 +13,25 @@ function Spinner() {
 }
  
 // An example of a flight card component.
-function FlightCard({ flightInfo }:{ flightInfo:any }) {
-  return (
-    <div>
-      <h2>Flight Information</h2>
-      <p>Flight Number: {flightInfo.flightNumber}</p>
-      <p>Departure: {flightInfo.departure}</p>
-      <p>Arrival: {flightInfo.arrival}</p>
-    </div>
-  );
-}
+// function FlightCard({ flightInfo }:{ flightInfo:any }) {
+//   return (
+//     <div>
+//       <h2>Flight Information</h2>
+//       <p>Flight Number: {flightInfo.flightNumber}</p>
+//       <p>Departure: {flightInfo.departure}</p>
+//       <p>Arrival: {flightInfo.arrival}</p>
+//     </div>
+//   );
+// }
  
 // An example of a function that fetches flight information from an external API.
-async function getFlightInfo(flightNumber: string) {
-  return {
-    flightNumber,
-    departure: 'New York',
-    arrival: 'San Francisco',
-  };
-}
+// async function getFlightInfo(flightNumber: string) {
+//   return {
+//     flightNumber,
+//     departure: 'New York',
+//     arrival: 'San Francisco',
+//   };
+// }
  
 async function submitUserMessage(userInput: string) {
   'use server';
@@ -54,7 +52,7 @@ async function submitUserMessage(userInput: string) {
     model: 'gpt-4-0125-preview',
     provider: openai,
     messages: [
-      { role: 'system', content: 'You are a flight assistant' },
+      { role: 'system', content: 'You are a helpful assistant' },
       { role: 'user', content: userInput }
     ],
     // `text` is called when an AI returns a text response (as opposed to a tool call).
@@ -74,35 +72,35 @@ async function submitUserMessage(userInput: string) {
  
       return <p>{content}</p>
     },
-    tools: {
-      get_flight_info: {
-        description: 'Get the information for a flight',
-        parameters: z.object({
-          flightNumber: z.string().describe('the number of the flight')
-        }).required(),
-        render: async function* ({ flightNumber }) {
-          // Show a spinner on the client while we wait for the response.
-          yield <Spinner/>
+    // tools: {
+    //   get_flight_info: {
+    //     description: 'Get the information for a flight',
+    //     parameters: z.object({
+    //       flightNumber: z.string().describe('the number of the flight')
+    //     }).required(),
+    //     render: async function* ({ flightNumber }) {
+    //       // Show a spinner on the client while we wait for the response.
+    //       yield <Spinner/>
  
-          // Fetch the flight information from an external API.
-          const flightInfo = await getFlightInfo(flightNumber)
+    //       // Fetch the flight information from an external API.
+    //       const flightInfo = await getFlightInfo(flightNumber)
  
-          // Update the final AI state.
-          aiState.done([
-            ...aiState.get(),
-            {
-              role: "function",
-              name: "get_flight_info",
-              // Content can be any string to provide context to the LLM in the rest of the conversation.
-              content: JSON.stringify(flightInfo),
-            }
-          ]);
+    //       // Update the final AI state.
+    //       aiState.done([
+    //         ...aiState.get(),
+    //         {
+    //           role: "function",
+    //           name: "get_flight_info",
+    //           // Content can be any string to provide context to the LLM in the rest of the conversation.
+    //           content: JSON.stringify(flightInfo),
+    //         }
+    //       ]);
  
-          // Return the flight card to the client.
-          return <FlightCard flightInfo={flightInfo} />
-        }
-      }
-    }
+    //       // Return the flight card to the client.
+    //       return <FlightCard flightInfo={flightInfo} />
+    //     }
+    //   }
+    // }
   })
  
   return {
