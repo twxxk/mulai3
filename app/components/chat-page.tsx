@@ -1,19 +1,21 @@
 'use client'
  
 import { useState } from 'react';
-import { useUIState, useActions } from "ai/rsc";
-import type { AI } from "../action";
+import { useUIState, useActions, useAIState, getAIState } from "ai/rsc";
+import type { AIAction } from "../ai-action";
 
 export default function ChatPage({className, model}:{className?:string, model?:string}) {
   const [inputValue, setInputValue] = useState('');
-  const [messages, setMessages] = useUIState<typeof AI>();
-  const { submitUserMessage } = useActions<typeof AI>();
+  const [modelValue, setModelValue] = useState('gpt-3.5-turbo');
+  const [uiState, setUIState] = useUIState<typeof AIAction>();
+  const [aiState, setAIState] = useAIState<typeof AIAction>();
+  const { submitUserMessage } = useActions<typeof AIAction>();
  
   return (
     <div className={className}>
       {
         // View messages in UI state
-        messages.map((message) => (
+        uiState.messages.map((message) => (
           <div key={message.id}>
             {message.display}
           </div>
@@ -24,23 +26,43 @@ export default function ChatPage({className, model}:{className?:string, model?:s
         e.preventDefault();
  
         // Add user message to UI state
-        setMessages((currentMessages) => [
-          ...currentMessages,
-          {
-            id: Date.now(),
-            display: <div>{inputValue}</div>,
-          },
-        ]);
+        setUIState((currentUIState) => ({
+          ...currentUIState,
+          messages: [
+            ...currentUIState.messages,
+            {
+              id: Date.now(),
+              display: <div>{inputValue}</div>,
+            },
+          ]
+        }))
+        // console.log('modelValue:', modelValue)
  
         // Submit and get response message
         const responseMessage = await submitUserMessage(inputValue);
-        setMessages((currentMessages) => [
-          ...currentMessages,
-          responseMessage,
-        ]);
+        setUIState((currentUIState) => ({
+          ...currentUIState,
+          messages: [
+            ...currentUIState.messages,
+            responseMessage,
+          ]
+        }));
  
         setInputValue('');
       }}>
+        <select value={modelValue} onChange={(event) => {
+          const newModelValue = event.target.value
+          setModelValue(newModelValue)
+          // console.log('new:', newModelValue)
+          setAIState((currentAIState) => ({
+            ...currentAIState,
+            modelValue: newModelValue,
+          }))
+        }}>
+          <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+          <option value="gpt-4-turbo-preview">gpt-4-turbo-preview</option>
+          <option value="gpt-4">gpt-4</option>
+        </select>
         <input
           placeholder="Send a message..."
           value={inputValue}

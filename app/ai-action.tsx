@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { OpenAI } from "openai";
 import { createAI, getMutableAIState, render } from "ai/rsc";
 import { z } from "zod";
@@ -8,9 +10,9 @@ const openai = new OpenAI({
  
 // An example of a spinner component. You can also import your own components,
 // or 3rd party component libraries.
-function Spinner() {
-  return <div>Loading...</div>;
-}
+// function Spinner() {
+//   return <div>Loading...</div>;
+// }
  
 // An example of a flight card component.
 // function FlightCard({ flightInfo }:{ flightInfo:any }) {
@@ -32,24 +34,28 @@ function Spinner() {
 //     arrival: 'San Francisco',
 //   };
 // }
- 
+
 async function submitUserMessage(userInput: string) {
   'use server';
  
-  const aiState = getMutableAIState<typeof AI>();
+  const aiState = getMutableAIState<typeof AIAction>();
  
   // Update the AI state with the new user message.
-  aiState.update([
+  aiState.update({
     ...aiState.get(),
-    {
-      role: 'user',
-      content: userInput,
-    },
-  ]);
+    messages: [
+      ...aiState.get().messages,
+      {
+        role: 'user',
+        content: userInput,
+      },
+    ]
+  });
  
   // The `render()` creates a generated, streamable UI.
-  const ui = render({
-    model: 'gpt-4-0125-preview',
+  // console.log('model:', modelValue, aiState.get().modelValue)
+  const ui:any = render({
+    model: aiState.get().modelValue,
     provider: openai,
     messages: [
       { role: 'system', content: 'You are a helpful assistant' },
@@ -61,13 +67,16 @@ async function submitUserMessage(userInput: string) {
     text: ({ content, done }) => {
       // When it's the final content, mark the state as done and ready for the client to access.
       if (done) {
-        aiState.done([
+        aiState.done({
           ...aiState.get(),
-          {
-            role: "assistant",
-            content
-          }
-        ]);
+          messages: [
+            ...aiState.get().messages,
+            {
+              role: "assistant",
+              content
+            }
+          ]
+        });
       }
  
       return <p>{content}</p>
@@ -109,22 +118,41 @@ async function submitUserMessage(userInput: string) {
   };
 }
  
-// Define the initial state of the AI. It can be any JSON object.
-const initialAIState: {
+type MessageAIState = {
   role: 'user' | 'assistant' | 'system' | 'function';
   content: string;
   id?: string;
   name?: string;
-}[] = [];
- 
-// The initial UI state that the client will keep track of, which contains the message IDs and their UI nodes.
-const initialUIState: {
+}
+
+// Define the initial state of the AI. It can be any JSON object.
+type AIState = {
+  messages: MessageAIState[],
+  modelValue: string,
+}
+
+type MessageUIState = {
   id: number;
   display: React.ReactNode;
-}[] = [];
- 
+}
+
+// The initial UI state that the client will keep track of, which contains the message IDs and their UI nodes.
+type InitialUIState = {
+  messages: MessageUIState[],
+}
+
+
+const initialAIState:AIState = {
+  messages:[], 
+  modelValue:'gpt-3.5-turbo',
+};
+
+const initialUIState: InitialUIState = {
+  messages: [],
+}
+
 // AI is a provider you wrap your application with so you can access AI and UI state in your components.
-export const AI = createAI({
+export const AIAction = createAI({
   actions: {
     submitUserMessage
   },
