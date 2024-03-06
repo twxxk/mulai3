@@ -1,12 +1,13 @@
 'use client'
  
-import { useState } from 'react';
-import { useUIState, useActions, useAIState, getAIState } from "ai/rsc";
+import { useCallback, useEffect, useState } from 'react';
+import { useUIState, useActions, useAIState } from "ai/rsc";
 import type { AIAction } from "../ai-action";
 import { ChatModel, allModels, getModelByValue, openAiCompatipleProviders } from '@/lib/ai-model';
+import { eventBus, EventName } from "@/lib/event-emitter"
 
-const openaiCompatibleModels = allModels.filter((model) => {
-  return openAiCompatipleProviders.indexOf(model.provider) >= 0
+const openaiCompatibleTextModels = allModels.filter((model) => {
+  return openAiCompatipleProviders.indexOf(model.provider) >= 0 && model.modelValue !== 'gpt-4-vision-preview'
 })
 
 export default function ChatPage({className}:{className?:string}) {
@@ -16,6 +17,50 @@ export default function ChatPage({className}:{className?:string}) {
   const chatModel = aiState.model
   const { submitUserMessage } = useActions<typeof AIAction>();
  
+  const handleSubmit = useCallback(async () => { 
+    // Add user message to UI state
+    setUIState((currentUIState) => ({
+      ...currentUIState,
+      messages: [
+        ...currentUIState.messages,
+        {
+          id: Date.now(),
+          display: <div>{inputValue}</div>,
+        },
+      ]
+    }))
+
+    // Submit and get response message
+    const responseMessage = await submitUserMessage(inputValue);
+    setUIState((currentUIState) => ({
+      ...currentUIState,
+      messages: [
+        ...currentUIState.messages,
+        responseMessage,
+      ]
+    }));
+
+    setInputValue('');
+  }, [inputValue, setInputValue, setUIState, submitUserMessage])
+
+  useEffect(() => {
+    const handleSubmitBroadcastMessage = (data:string) => {
+      // console.log('onsubmit', data);
+      handleSubmit()
+    };
+    eventBus.on(EventName.onSubmitBroadcastMessage, handleSubmitBroadcastMessage);
+    const handleChangeBroadcastMessage = (data:string) => {
+      // console.log('onchange', data);
+      setInputValue(data)
+    };
+    eventBus.on(EventName.onChangeBroadcastMessage, handleChangeBroadcastMessage);
+      
+    return () => {
+      eventBus.removeListener(EventName.onSubmitBroadcastMessage, handleSubmitBroadcastMessage);
+      eventBus.removeListener(EventName.onChangeBroadcastMessage, handleChangeBroadcastMessage);
+    };
+  }, [handleSubmit]);
+
   return (
     <div className={className}>
       {
@@ -29,30 +74,7 @@ export default function ChatPage({className}:{className?:string}) {
  
       <form onSubmit={async (e) => {
         e.preventDefault();
- 
-        // Add user message to UI state
-        setUIState((currentUIState) => ({
-          ...currentUIState,
-          messages: [
-            ...currentUIState.messages,
-            {
-              id: Date.now(),
-              display: <div>{inputValue}</div>,
-            },
-          ]
-        }))
- 
-        // Submit and get response message
-        const responseMessage = await submitUserMessage(inputValue);
-        setUIState((currentUIState) => ({
-          ...currentUIState,
-          messages: [
-            ...currentUIState.messages,
-            responseMessage,
-          ]
-        }));
- 
-        setInputValue('');
+        handleSubmit();
       }}>
         <select value={chatModel.modelValue} onChange={(event) => {
           const newModelValue = event.target.value
@@ -62,7 +84,7 @@ export default function ChatPage({className}:{className?:string}) {
             model: newModel,
           }))
         }}>
-          {openaiCompatibleModels.map((model) => (
+          {openaiCompatibleTextModels.map((model) => (
             <option key={model.sdkModelValue} value={model.modelValue}>{model.label}</option>
           ))}
         </select><br />

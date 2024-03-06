@@ -12,8 +12,15 @@ export default function Page() {
         <ChatPage className="flex-1 border-r border-r-teal-500 p-2" />
       </AIAction>
       <AIAction>
+        <ChatPage className="flex-1 border-r border-r-teal-500 p-2" />
+      </AIAction>
+      <AIAction>
         <ChatPage className='flex-1 border-teal-500 p-2'/>
       </AIAction>
     </div>
+    
+    <hr />
+    <p>Broadcast</p>
+    <Broadcast />
   </div>)
 }
