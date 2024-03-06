@@ -31,36 +31,36 @@ function getProvider(model:ChatModel) {
     console.error('unsupported model', model)
     return null
   }
-  
+
   return provider
 }
 
 // An example of a spinner component. You can also import your own components,
 // or 3rd party component libraries.
-// function Spinner() {
-//   return <div>Loading...</div>;
-// }
+function Spinner() {
+  return <div>Loading...</div>;
+}
  
 // An example of a flight card component.
-// function FlightCard({ flightInfo }:{ flightInfo:any }) {
-//   return (
-//     <div>
-//       <h2>Flight Information</h2>
-//       <p>Flight Number: {flightInfo.flightNumber}</p>
-//       <p>Departure: {flightInfo.departure}</p>
-//       <p>Arrival: {flightInfo.arrival}</p>
-//     </div>
-//   );
-// }
+function FlightCard({ flightInfo }:{ flightInfo:any }) {
+  return (
+    <div>
+      <h2>Flight Information (Function calling example)</h2>
+      <p>Flight Number: {flightInfo.flightNumber}</p>
+      <p>Departure: {flightInfo.departure}</p>
+      <p>Arrival: {flightInfo.arrival}</p>
+    </div>
+  );
+}
  
 // An example of a function that fetches flight information from an external API.
-// async function getFlightInfo(flightNumber: string) {
-//   return {
-//     flightNumber,
-//     departure: 'New York',
-//     arrival: 'San Francisco',
-//   };
-// }
+async function getFlightInfo(flightNumber: string) {
+  return {
+    flightNumber,
+    departure: 'New York',
+    arrival: 'San Francisco',
+  };
+}
 
 async function submitUserMessage(userInput: string) {
   'use server';
@@ -80,7 +80,7 @@ async function submitUserMessage(userInput: string) {
   });
  
   // The `render()` creates a generated, streamable UI.
-  // console.log('model:', modelValue, aiState.get().modelValue)
+  //  console.log('model:', aiState.get().model)
   const ui:any = render({
     model: aiState.get().model.sdkModelValue,
     provider: getProvider(aiState.get().model),
@@ -108,35 +108,47 @@ async function submitUserMessage(userInput: string) {
  
       return <p>{content}</p>
     },
-    // tools: {
-    //   get_flight_info: {
-    //     description: 'Get the information for a flight',
-    //     parameters: z.object({
-    //       flightNumber: z.string().describe('the number of the flight')
-    //     }).required(),
-    //     render: async function* ({ flightNumber }) {
-    //       // Show a spinner on the client while we wait for the response.
-    //       yield <Spinner/>
- 
-    //       // Fetch the flight information from an external API.
-    //       const flightInfo = await getFlightInfo(flightNumber)
- 
-    //       // Update the final AI state.
-    //       aiState.done([
-    //         ...aiState.get(),
-    //         {
-    //           role: "function",
-    //           name: "get_flight_info",
-    //           // Content can be any string to provide context to the LLM in the rest of the conversation.
-    //           content: JSON.stringify(flightInfo),
-    //         }
-    //       ]);
- 
-    //       // Return the flight card to the client.
-    //       return <FlightCard flightInfo={flightInfo} />
-    //     }
-    //   }
-    // }
+    // Some models (fireworks, perplexity) just ignore and some (groq) throw errors
+    ...(aiState.get().model.doesToolSupport ? {
+      tools: {
+        get_flight_info: {
+          description: 'Get the information for a flight',
+          parameters: z.object({
+            flightNumber: z.string().describe('the number of the flight')
+          }).required(),
+          render: async function* (params:any) {
+            console.log(params);
+            const {flightNumber} = JSON.parse(params);
+  
+            // Show a spinner on the client while we wait for the response.
+            yield <Spinner/>
+  
+            // console.log(typeof params)
+   
+            console.log('flight#', flightNumber)
+            // Fetch the flight information from an external API.
+            const flightInfo = await getFlightInfo(flightNumber)
+            console.log('flightInfo:', flightInfo)
+    
+            // Update the final AI state.
+            aiState.done({
+              ...aiState.get(),
+              messages: [
+                ...aiState.get().messages,
+                {
+                  role: "function",
+                  name: "get_flight_info",
+                  // Content can be any string to provide context to the LLM in the rest of the conversation.
+                  content: JSON.stringify(flightInfo),
+                }
+            ]});
+   
+            // Return the flight card to the client.
+            return <FlightCard flightInfo={flightInfo} />
+          }
+        }
+      },
+    } : {}),
   })
  
   return {
