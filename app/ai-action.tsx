@@ -3,11 +3,37 @@ import 'server-only'
 import { OpenAI } from "openai";
 import { createAI, getMutableAIState, render } from "ai/rsc";
 import { z } from "zod";
+import { ChatModel, getModelByValue } from '@/lib/ai-model';
  
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
- 
+const fireworksai = new OpenAI({
+  apiKey: process.env.FIREWORKS_API_KEY,
+  baseURL: 'https://api.fireworks.ai/inference/v1',
+});
+const groq = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: 'https://api.groq.com/openai/v1',
+})
+const perplexity  = new OpenAI({
+  apiKey: process.env.PERPLEXITY_API_KEY,
+  baseURL: 'https://api.perplexity.ai/',
+})
+
+function getProvider(model:ChatModel) {
+  const providerMap:{[key:string]:any} = {
+    openai, fireworksai, groq, perplexity
+  }
+  console.log(model.provider)
+  const provider = providerMap[model.provider]
+  if (!provider) {
+    console.error('unsupported model', model)
+    return null
+  }
+  return provider
+}
+
 // An example of a spinner component. You can also import your own components,
 // or 3rd party component libraries.
 // function Spinner() {
@@ -55,8 +81,8 @@ async function submitUserMessage(userInput: string) {
   // The `render()` creates a generated, streamable UI.
   // console.log('model:', modelValue, aiState.get().modelValue)
   const ui:any = render({
-    model: aiState.get().modelValue,
-    provider: openai,
+    model: aiState.get().model.sdkModelValue,
+    provider: getProvider(aiState.get().model),
     messages: [
       { role: 'system', content: 'You are a helpful assistant' },
       { role: 'user', content: userInput }
@@ -128,7 +154,7 @@ type MessageAIState = {
 // Define the initial state of the AI. It can be any JSON object.
 type AIState = {
   messages: MessageAIState[],
-  modelValue: string,
+  model: ChatModel,
 }
 
 type MessageUIState = {
@@ -143,8 +169,8 @@ type InitialUIState = {
 
 
 const initialAIState:AIState = {
-  messages:[], 
-  modelValue:'gpt-3.5-turbo',
+  messages: [], 
+  model: getModelByValue('gpt-3.5-turbo') as ChatModel,
 };
 
 const initialUIState: InitialUIState = {

@@ -3,12 +3,17 @@
 import { useState } from 'react';
 import { useUIState, useActions, useAIState, getAIState } from "ai/rsc";
 import type { AIAction } from "../ai-action";
+import { ChatModel, allModels, getModelByValue, openAiCompatipleProviders } from '@/lib/ai-model';
 
-export default function ChatPage({className, model}:{className?:string, model?:string}) {
+const openaiCompatibleModels = allModels.filter((model) => {
+  return openAiCompatipleProviders.indexOf(model.provider) >= 0
+})
+
+export default function ChatPage({className}:{className?:string}) {
   const [inputValue, setInputValue] = useState('');
-  const [modelValue, setModelValue] = useState('gpt-3.5-turbo');
   const [uiState, setUIState] = useUIState<typeof AIAction>();
   const [aiState, setAIState] = useAIState<typeof AIAction>();
+  const chatModel = aiState.model
   const { submitUserMessage } = useActions<typeof AIAction>();
  
   return (
@@ -36,7 +41,6 @@ export default function ChatPage({className, model}:{className?:string, model?:s
             },
           ]
         }))
-        // console.log('modelValue:', modelValue)
  
         // Submit and get response message
         const responseMessage = await submitUserMessage(inputValue);
@@ -50,18 +54,17 @@ export default function ChatPage({className, model}:{className?:string, model?:s
  
         setInputValue('');
       }}>
-        <select value={modelValue} onChange={(event) => {
+        <select value={chatModel.modelValue} onChange={(event) => {
           const newModelValue = event.target.value
-          setModelValue(newModelValue)
-          // console.log('new:', newModelValue)
+          const newModel = getModelByValue(newModelValue) as ChatModel
           setAIState((currentAIState) => ({
             ...currentAIState,
-            modelValue: newModelValue,
+            model: newModel,
           }))
         }}>
-          <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-          <option value="gpt-4-turbo-preview">gpt-4-turbo-preview</option>
-          <option value="gpt-4">gpt-4</option>
+          {openaiCompatibleModels.map((model) => (
+            <option key={model.sdkModelValue} value={model.modelValue}>{model.label}</option>
+          ))}
         </select>
         <input
           placeholder="Send a message..."
