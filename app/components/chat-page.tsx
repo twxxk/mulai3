@@ -65,13 +65,14 @@ export default function ChatPage({className}:{className?:string}) {
           {openaiCompatibleModels.map((model) => (
             <option key={model.sdkModelValue} value={model.modelValue}>{model.label}</option>
           ))}
-        </select>
+        </select><br />
         <input
           placeholder="Send a message..."
           value={inputValue}
           onChange={(event) => {
             setInputValue(event.target.value)
           }}
+          className='w-full'
         />
       </form>
     </div>

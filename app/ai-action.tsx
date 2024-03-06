@@ -24,13 +24,14 @@ const perplexity  = new OpenAI({
 function getProvider(model:ChatModel) {
   const providerMap:{[key:string]:any} = {
     openai, fireworksai, groq, perplexity
-  }
-  console.log(model.provider)
+  } as const
+
   const provider = providerMap[model.provider]
   if (!provider) {
     console.error('unsupported model', model)
     return null
   }
+  
   return provider
 }
 
