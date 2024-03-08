@@ -20,7 +20,7 @@ export default function ChatPage({className}:{className?:string}) {
   const [aiState, setAIState] = useAIState<typeof AIAction>();
   const chatModel = aiState.model
   const { submitUserMessage } = useActions<typeof AIAction>();
- 
+  
   const handleSubmit = useCallback(async () => { 
     // Add user message to UI state
     setUIState((currentUIState) => ({
@@ -98,8 +98,9 @@ export default function ChatPage({className}:{className?:string}) {
           onChange={(event) => {
             setInputValue(event.target.value)
           }}
-          className='w-full'
-        /><br />
+          className='w-96'
+        />
+        <br />
 
         <label className='whitespace-nowrap overflow-hidden'>
           <input type="checkbox" className='mr-1'

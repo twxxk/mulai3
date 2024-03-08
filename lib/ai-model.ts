@@ -56,9 +56,11 @@ const allModels0:ChatModel0[] = [
     {label: 'Anthropic Claude 3 Opus', provider: 'anthropic', modelValue: 'claude-3-opus-20240229', sdkModelValue: 'claude-3-opus-20240229', qualityScore: 255/256*100, japaneseScore:64, maxTokens: 4096},
 
     // free (up to 60queries/min) 
-    {label: 'Google Gemini Pro', provider: 'google', modelValue: 'gemini-pro', sdkModelValue: 'gemini-pro', qualityScore: 122/256*100, japaneseScore: 64},
+    {label: 'Google Gemini 1.0 Pro', provider: 'google', modelValue: 'gemini-1.0-pro', sdkModelValue: 'gemini-pro', qualityScore: 122/256*100, japaneseScore: 64},
     // free (up to 60queries/min) 
-    {label: 'Google Gemini Pro Latest', provider: 'google', modelValue: 'gemini-1.0-pro-latest', sdkModelValue: 'gemini-1.0-pro-latest', qualityScore: 218/256*100, japaneseScore: 64},
+    {label: 'Google Gemini 1.0 Pro Latest', provider: 'google', modelValue: 'gemini-1.0-pro-latest', sdkModelValue: 'gemini-1.0-pro-latest', qualityScore: 218/256*100, japaneseScore: 64},
+    // cannot call from api. You can check available models from colab. https://ai.google.dev/tutorials/python_quickstart
+    // {label: 'Google Gemini 1.5 Pro', provider: 'google', modelValue: 'gemini-1.5-pro-latest', sdkModelValue: 'gemini-1.5-pro-latest', qualityScore: 219/256*100, japaneseScore: 65},
     {label: 'Google Gemini Pro Vision', provider: 'google', modelValue: 'gemini-pro-vision', sdkModelValue: 'gemini-pro-vision', qualityScore: 218/256*100, japaneseScore: 64},
 
     // no longer necessary. Claude 3 is cheeper and better
@@ -122,6 +124,10 @@ const allModels0:ChatModel0[] = [
     {label: 'DALL·E 2', provider: 'openai-image', modelValue: 'dall-e-2', sdkModelValue: 'dall-e-2', qualityScore: 40, japaneseScore:10},
     {label: 'DALL·E 3', provider: 'openai-image', modelValue: 'dall-e-3', sdkModelValue: 'dall-e-3', qualityScore: 40, japaneseScore:40},
     {label: 'Stable Diffusion 2', provider: 'huggingface-image', modelValue: 'stable-diffusion-2', sdkModelValue: 'stabilityai/stable-diffusion-2', qualityScore: 40, japaneseScore:10},
+
+    // basically for function calls only
+    {label: 'FireFunction V1', provider: 'fireworksai', modelValue: 'firefunction-v1', sdkModelValue: 'accounts/fireworks/models/firefunction-v1', qualityScore: 0, japaneseScore: 0, doesToolSupport: true,},
+
     ...(process.env.NODE_ENV === 'development' ? [
     // The following Models are not found...
     // https://readme.fireworks.ai/docs/querying-vision-language-models#can-firellava-generate-images

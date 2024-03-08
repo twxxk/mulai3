@@ -4,6 +4,7 @@ import { OpenAI } from "openai";
 import { createAI, getMutableAIState, render } from "ai/rsc";
 import { z } from "zod";
 import { ChatModel, getModelByValue } from '@/lib/ai-model';
+import Image from 'next/image'
  
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -40,7 +41,94 @@ function getProvider(model:ChatModel) {
 function Spinner() {
   return <div>Loading...</div>;
 }
- 
+
+// for test purpose
+async function wait(msec:number) {
+  await new Promise(resolve => setTimeout(resolve, msec));  
+}
+
+function AppCard({ appInfo }:{ appInfo:any }) {
+  return (
+    <div>
+      <h2>App Information (Function calling example)</h2>
+      <p>App Name: {appInfo.name}</p>
+      <p>Author: {appInfo.author}</p>
+    </div>
+  );
+}
+
+async function getAppInfo() {
+  return {
+    name: 'Mulai3',
+    author: 'twk',
+  };
+}
+
+// https://openweathermap.org/weather-conditions
+type OpenWeatherMapErrorResponse = {
+  cod:number,
+  message:string,
+}
+type OpenWeatherMapWeather = {
+  id: number, main: string, description: string, icon: string
+}
+type OpenWeatherMapResponse = {
+  coord: {lon:number, lat:number},
+  weather: OpenWeatherMapWeather[],
+  base: string,
+  main: {temp:number, feels_like:number, temp_min:number, temp_max:number, pressure:number, humidity:number},
+  visibility: number,
+  wind: {speed:number, deg:number},
+  rain: {"1h":number},
+  clouds: {all:number},
+  dt: number,
+  sys: {type:number, id:number, country:string, sunrise:number, sunset:number},
+  timezone: number,
+  id: number,
+  name: string,
+  cod: number,
+}
+
+async function getCurrentWeather(city:string) {
+  const api_key = process.env.OPENWEATHER_API_key
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${api_key}&units=metric`
+  console.log(url)
+
+  const response = await fetch(url)
+  const json = await response.json() 
+
+  if (json.cod === 200)
+    return json as OpenWeatherMapResponse
+  else
+    return json as OpenWeatherMapErrorResponse
+}  
+
+function WeatherIcon({ weather }:{ weather: OpenWeatherMapWeather }) {
+  const url = `http://openweathermap.org/img/wn/${weather.icon}@2x.png`
+  return <Image src={url} alt={weather.description} width={32} height={32} />
+}
+
+function WeatherCard({ city, weatherInfo }: { city: string, weatherInfo: OpenWeatherMapResponse | OpenWeatherMapErrorResponse }) {
+  if (weatherInfo.cod !== 200) {
+    return (
+      <div>
+        Weather info of {city} is not found.
+      </div>
+    )
+  }
+  const w = weatherInfo as OpenWeatherMapResponse
+  return (
+    <div>
+      <h2>{w.name}</h2>
+      <WeatherIcon weather={w.weather[0]} />
+      {w.weather[0].description}<br />
+      Temparature: {w.main.temp}<br />
+      Humidity: {w.main.humidity}%<br />
+      {/* {JSON.stringify(weatherInfo)} */}
+    </div>
+  )
+}
+
 // An example of a flight card component.
 function FlightCard({ flightInfo }:{ flightInfo:any }) {
   return (
@@ -66,7 +154,7 @@ async function submitUserMessage(userInput: string) {
   'use server';
  
   const aiState = getMutableAIState<typeof AIAction>();
- 
+
   // Update the AI state with the new user message.
   aiState.update({
     ...aiState.get(),
@@ -116,37 +204,130 @@ async function submitUserMessage(userInput: string) {
           parameters: z.object({
             flightNumber: z.string().describe('the number of the flight')
           }).required(),
-          render: async function* (params:any) {
-            console.log(params);
-            const {flightNumber} = JSON.parse(params);
-  
-            // Show a spinner on the client while we wait for the response.
-            yield <Spinner/>
-  
-            // console.log(typeof params)
-   
-            console.log('flight#', flightNumber)
-            // Fetch the flight information from an external API.
-            const flightInfo = await getFlightInfo(flightNumber)
-            console.log('flightInfo:', flightInfo)
+          render: async function* ({flightNumber}:{flightNumber:string}) {
+            console.log('get_flight_info', flightNumber);
+            try {
+              // Show a spinner on the client while we wait for the response.
+              yield <Spinner/>
     
-            // Update the final AI state.
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  role: "function",
-                  name: "get_flight_info",
-                  // Content can be any string to provide context to the LLM in the rest of the conversation.
-                  content: JSON.stringify(flightInfo),
-                }
-            ]});
-   
-            // Return the flight card to the client.
-            return <FlightCard flightInfo={flightInfo} />
+              // console.log(typeof params)
+    
+              console.log('flight#', flightNumber)
+              // Fetch the flight information from an external API.
+              const flightInfo = await getFlightInfo(flightNumber)
+              console.log('flightInfo:', flightInfo)
+      
+              // Update the final AI state.
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    role: "function",
+                    name: "get_flight_info",
+                    // Content can be any string to provide context to the LLM in the rest of the conversation.
+                    content: JSON.stringify(flightInfo),
+                  }
+              ]});
+    
+              // Return the flight card to the client.
+              return <FlightCard flightInfo={flightInfo} />
+            } catch (e:any) {
+              console.log('got error', e, flightNumber)
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    role: "function",
+                    name: "get_app_info",
+                    content: e.toString(),
+                  },
+                ]
+              });
+              return <span>{e.toString()}</span>                
+            }              
           }
-        }
+        },
+        get_mulai3_app_info: {
+          description: 'Get the information of Mulai3 app',
+          parameters: z.object({}), // no params
+          render: async function* () {
+            console.log('get_mulai3_app_info');
+            try {
+              yield <Spinner />
+              await wait(2000);
+              const appInfo = await getAppInfo()  
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    role: "function",
+                    name: "get_mulai3_app_info",
+                    content: JSON.stringify(appInfo),
+                  },
+                ]
+              });
+              await new Promise(resolve => setTimeout(resolve, 2000));
+    
+              return <AppCard appInfo={appInfo} />
+            } catch (e:any) {
+              console.log('got error', e)
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    role: "function",
+                    name: "get_app_info",
+                    content: e.toString(),
+                  },
+                ]
+              });
+              return <span>{e.toString()}</span>                
+            }            
+          }
+        } as any,
+        get_current_weather: {
+          description: 'Get current weather information of the specified city',
+          parameters: z.object({
+            city: z.string().describe('the city to get current weather')
+          }).required(),
+          render: async function* ({city}:{city:string}) {
+            console.log('get_current_weather', city);
+            try {
+              const weatherInfo = await getCurrentWeather(city)  
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    role: "function",
+                    name: "get_app_info",
+                    content: JSON.stringify(weatherInfo),
+                  },
+                ]
+              });
+              return <WeatherCard city={city} weatherInfo={weatherInfo} />  
+            } catch (e:any) {
+              console.log('got error', e, city)
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    role: "function",
+                    name: "get_app_info",
+                    content: e.toString(),
+                  },
+                ]
+              });
+              return <span>{e.toString()}</span>                
+            }
+          }
+        } as any,
       },
     } : {}),
   })
