@@ -15,6 +15,58 @@ const openaiCompatibleTextModels = allModels.filter((model) => {
   return openAiCompatipleProviders.indexOf(model.provider) >= 0 && model.modelValue !== 'gpt-4-vision-preview'
 })
 
+function configureHistoryAutoScroll(historyElementRef:any) {
+  return () => {
+    if (historyElementRef.current) {
+      // Scroll
+      const resizeObserver = new ResizeObserver(entries => {
+        for (const entry of entries) {
+          // console.log('resize top=', entry.target.scrollTop, ', height=', entry.target.scrollHeight);
+          const historyElement = historyElementRef.current as unknown as Element
+          // When you save source during develpment, historyElement could be null
+          if (!historyElement) continue;
+          historyElement.scrollTop = historyElement.scrollHeight
+        }
+      });
+
+      // Called when the new answer is added
+      let lastObservedNode:Element
+      const mutationObserver = new MutationObserver(entries => {
+        for (const mutation of entries) {
+          // only childList is being observed
+          // if (mutation.type !== 'childList')
+          //   continue;
+
+          // Set the resize observer to the last node which should be the expanding
+          // console.log('added nodes=', mutation.addedNodes.length)
+          const addedNode = mutation.addedNodes.item(mutation.addedNodes.length - 1)
+
+          if (addedNode?.nodeType !== Node.ELEMENT_NODE) {
+            console.log('node type=', addedNode?.nodeType)
+            continue;
+          }
+
+          if (lastObservedNode)
+            resizeObserver.unobserve(lastObservedNode)
+          
+          const addedElement = addedNode as Element
+          resizeObserver.observe(addedElement)
+          lastObservedNode = addedElement
+        }
+      });
+
+      mutationObserver.observe(historyElementRef.current, { attributes: false, characterData: false, childList: true });
+
+      // cleanup
+      return () => {
+        // console.log('cleaning observers'); 
+        mutationObserver.disconnect()
+        resizeObserver.disconnect()
+      };
+    }
+  }
+}
+
 export default function ChatPane({className}:{className?:string}) {
 	const locale = useContext(LocaleContext)
   const {t} = getTranslations(locale)
@@ -26,6 +78,7 @@ export default function ChatPane({className}:{className?:string}) {
   const { submitUserMessage } = useActions<typeof AIAction>();
   
   const [acceptsBroadcast, setAcceptsBroadcast] = useState(true)
+  const historyElementRef = useRef(null);
   const formRef = useRef<HTMLFormElement>(null)
 
   const handleSubmit = useCallback(async () => { 
@@ -67,6 +120,23 @@ export default function ChatPane({className}:{className?:string}) {
         setInputValue(data)
     };
     eventBus.on(EventName.onChangeBroadcastMessage, handleChangeBroadcastMessage);
+
+    const handleResetMessages = () => {
+      console.log('reset') // XXX nyi
+      // handleChangeBroadcastMessage('')
+      // setUIState((currentUIState) => ({
+      //   ...currentUIState,
+      //   messages: []
+      // }))
+      // setAIState((currentAIState) => ({
+      //   ...currentAIState,
+      //   messages: [{
+      //     role: 'user',
+      //     content: 'Reset the conversation.',
+      //   }],
+      // }))
+    };
+    eventBus.on(EventName.onResetMessages, handleResetMessages)
       
     return () => {
       eventBus.removeListener(EventName.onSubmitBroadcastMessage, handleSubmitBroadcastMessage);
@@ -75,9 +145,13 @@ export default function ChatPane({className}:{className?:string}) {
     };
   }, [handleSubmit, acceptsBroadcast]);
 
+  useEffect(
+    configureHistoryAutoScroll(historyElementRef),
+  [historyElementRef]);
+    
   return (
     <article className={'flex flex-col w-full h-full ' + className}>
-      <div className='flex-1 overflow-y-auto w-full'>
+      <div className='flex-1 overflow-y-auto w-full' ref={historyElementRef}>
         <div className='px-3 py-1 font-bold text-teal-800'>
           {t('ai')}<span className='text-teal-800'>{chatModel.label}</span>
         </div>
