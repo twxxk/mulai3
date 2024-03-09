@@ -8,7 +8,8 @@ import { DropdownMenuTrigger, DropdownMenuItem, DropdownMenuGroup, DropdownMenuC
 import { GlobeIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useContext } from "react";
-import { LocaleContext, getTranslations } from "@/lib/locale-context";
+import { getTranslations } from "@/lib/locale-context";
+import { LocaleContext } from "@/lib/locale-provider";
 
 type LocaleInfo = { value: string, label: string }
 

@@ -25,7 +25,7 @@
 
 export type ModelProvider = 'openai' | 'google' | 'fireworksai' | 'huggingface' | 'cohere' | 'aws' | 'mistral' | 'groq' | 'perplexity' | 'langchain' | 'anthropic'
     | 'openai-image' | 'huggingface-image' | 'fireworksai-image'
-export const openAiCompatipleProviders:ModelProvider[] = ['openai', 'fireworksai', 'groq', 'perplexity'] as const
+export const openAiCompatipleProviders:ModelProvider[] = ['openai', 'fireworksai', 'groq', 'perplexity', 'mistral'] as const
 
 // Declare the internal type to avoid build errors
 type ChatModel0 = {
@@ -94,7 +94,9 @@ const allModels0:ChatModel0[] = [
     {label: 'Groq Mixtral 8x7b', provider: 'groq', modelValue: 'groq-Mixtral-8x7b-Instruct-v0.1', sdkModelValue: 'mixtral-8x7b-32768', qualityScore: 152/256*100+1, japaneseScore:5},
     {label: 'Groq Llama 2 70B Chat', provider: 'groq', modelValue: 'groq-LLaMA2-70b-chat', sdkModelValue: 'llama2-70b-4096', qualityScore: 82/256*100+2, japaneseScore:5},
 
-    {label: 'Mistral Small', provider: 'mistral', modelValue: 'mistral-small', sdkModelValue: 'mistral-small', qualityScore: 40, japaneseScore:5},
+    // Although the documentation says Mistral works with function calls, it returns 422 (no body)
+    // https://sdk.vercel.ai/docs/concepts/tools#provider-support
+    {label: 'Mistral Small', provider: 'mistral', modelValue: 'mistral-small', sdkModelValue: 'mistral-small', qualityScore: 40, japaneseScore:5 },
     // in 0.14€/M, out 0.42€/M
     {label: 'Mistral Tiny', provider: 'mistral', modelValue: 'mistral-tiny', sdkModelValue: 'mistral-tiny', qualityScore: 40, japaneseScore:10},
     {label: 'Mixtral 8x7b MoE (Hugging Face)', provider: 'fireworksai', modelValue: 'mixtral-8x7b-instruct-hf', sdkModelValue: 'accounts/fireworks/models/mixtral-8x7b-instruct-hf', qualityScore: 120/256*100, japaneseScore:5},
@@ -161,7 +163,7 @@ export type ChatModel = {
 
 export const allModels:ChatModel[] = allModels0 as any
 // fall back free model.
-export const DEFAULT_MODEL:ChatModel = allModels.find(model => model.modelValue === 'gemini-pro') as ChatModel
+export const DEFAULT_MODEL:ChatModel = allModels.find(model => model.modelValue === 'gemini-1.0-pro') as ChatModel
 
 export const allModelValues = allModels0.map(model => model.modelValue);
 

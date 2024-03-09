@@ -5,6 +5,9 @@ import { createAI, getMutableAIState, render } from "ai/rsc";
 import { z } from "zod";
 import { ChatModel, getModelByValue } from '@/lib/ai-model';
 import Image from 'next/image'
+import ChatMessage, { ChatContentMarkdown } from '@/lib/components/chat-message';
+import { WeatherCard } from '@/components/component/weather-card';
+import { OpenWeatherMapErrorResponse, OpenWeatherMapResponse } from '@/lib/open-weather-map';
  
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -21,10 +24,14 @@ const perplexity  = new OpenAI({
   apiKey: process.env.PERPLEXITY_API_KEY,
   baseURL: 'https://api.perplexity.ai/',
 })
+const mistral = new OpenAI({
+  apiKey: process.env.MISTRAL_API_KEY,
+  baseURL: 'https://api.mistral.ai/v1',
+})
 
 function getProvider(model:ChatModel) {
   const providerMap:{[key:string]:any} = {
-    openai, fireworksai, groq, perplexity
+    openai, fireworksai, groq, perplexity, mistral,
   } as const
 
   const provider = providerMap[model.provider]
@@ -64,33 +71,9 @@ async function getAppInfo() {
   };
 }
 
-// https://openweathermap.org/weather-conditions
-type OpenWeatherMapErrorResponse = {
-  cod:number,
-  message:string,
-}
-type OpenWeatherMapWeather = {
-  id: number, main: string, description: string, icon: string
-}
-type OpenWeatherMapResponse = {
-  coord: {lon:number, lat:number},
-  weather: OpenWeatherMapWeather[],
-  base: string,
-  main: {temp:number, feels_like:number, temp_min:number, temp_max:number, pressure:number, humidity:number},
-  visibility: number,
-  wind: {speed:number, deg:number},
-  rain: {"1h":number},
-  clouds: {all:number},
-  dt: number,
-  sys: {type:number, id:number, country:string, sunrise:number, sunset:number},
-  timezone: number,
-  id: number,
-  name: string,
-  cod: number,
-}
 
 async function getCurrentWeather(city:string) {
-  const api_key = process.env.OPENWEATHER_API_key
+  const api_key = process.env.OPENWEATHER_API_KEY
   const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${api_key}&units=metric`
   console.log(url)
 
@@ -103,12 +86,7 @@ async function getCurrentWeather(city:string) {
     return json as OpenWeatherMapErrorResponse
 }  
 
-function WeatherIcon({ weather }:{ weather: OpenWeatherMapWeather }) {
-  const url = `http://openweathermap.org/img/wn/${weather.icon}@2x.png`
-  return <Image src={url} alt={weather.description} width={32} height={32} />
-}
-
-function WeatherCard({ city, weatherInfo }: { city: string, weatherInfo: OpenWeatherMapResponse | OpenWeatherMapErrorResponse }) {
+function WeatherCardOrError({ city, weatherInfo }: { city: string, weatherInfo: OpenWeatherMapResponse | OpenWeatherMapErrorResponse }) {
   if (weatherInfo.cod !== 200) {
     return (
       <div>
@@ -116,16 +94,8 @@ function WeatherCard({ city, weatherInfo }: { city: string, weatherInfo: OpenWea
       </div>
     )
   }
-  const w = weatherInfo as OpenWeatherMapResponse
   return (
-    <div>
-      <h2>{w.name}</h2>
-      <WeatherIcon weather={w.weather[0]} />
-      {w.weather[0].description}<br />
-      Temparature: {w.main.temp}<br />
-      Humidity: {w.main.humidity}%<br />
-      {/* {JSON.stringify(weatherInfo)} */}
-    </div>
+    <WeatherCard weather={weatherInfo as OpenWeatherMapResponse} />
   )
 }
 
@@ -150,7 +120,12 @@ async function getFlightInfo(flightNumber: string) {
   };
 }
 
-async function submitUserMessage(userInput: string) {
+type MessageUIState = {
+  id: number;
+  display: React.ReactNode;
+}
+
+async function submitUserMessage(userInput: string):Promise<MessageUIState> {
   'use server';
  
   const aiState = getMutableAIState<typeof AIAction>();
@@ -169,7 +144,7 @@ async function submitUserMessage(userInput: string) {
  
   // The `render()` creates a generated, streamable UI.
   //  console.log('model:', aiState.get().model)
-  const ui:any = render({
+  const ui:React.ReactNode = render({
     model: aiState.get().model.sdkModelValue,
     provider: getProvider(aiState.get().model),
     messages: [
@@ -194,7 +169,7 @@ async function submitUserMessage(userInput: string) {
         });
       }
  
-      return <p>{content}</p>
+      return <ChatMessage role="assistant">{content}</ChatMessage>
     },
     // Some models (fireworks, perplexity) just ignore and some (groq) throw errors
     ...(aiState.get().model.doesToolSupport ? {
@@ -310,7 +285,7 @@ async function submitUserMessage(userInput: string) {
                   },
                 ]
               });
-              return <WeatherCard city={city} weatherInfo={weatherInfo} />  
+              return <WeatherCardOrError city={city} weatherInfo={weatherInfo} />  
             } catch (e:any) {
               console.log('got error', e, city)
               aiState.done({
@@ -351,11 +326,6 @@ type AIState = {
   model: ChatModel,
 }
 
-type MessageUIState = {
-  id: number;
-  display: React.ReactNode;
-}
-
 // The initial UI state that the client will keep track of, which contains the message IDs and their UI nodes.
 type InitialUIState = {
   messages: MessageUIState[],
@@ -381,3 +351,15 @@ export const AIAction = createAI({
   initialUIState,
   initialAIState
 });
+
+export function createAIAction({initialModel}:{initialModel:ChatModel}):typeof AIAction {
+  return createAI({
+    actions: {
+      submitUserMessage
+    },
+    // Each state can be any shape of object, but for chat applications
+    // it makes sense to have an array of messages. Or you may prefer something like { id: number, messages: Message[] }
+    initialUIState,
+    initialAIState: {...initialAIState, model: initialModel},
+  });
+}

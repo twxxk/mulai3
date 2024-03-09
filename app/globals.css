@@ -16,16 +16,6 @@
   }
 }
 
-/* body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
-} */
-input, textarea, select {
-  border: solid 1px #999;
-  margin: 0.2em;
-  padding: 2px;
-}
-
 @layer utilities {
   .text-balance {
     text-wrap: balance;

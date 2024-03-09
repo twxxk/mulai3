@@ -1,33 +1,38 @@
-import { AIAction } from "./ai-action";
-import ChatPage from './components/chat-page';
+import { AIAction, createAIAction } from "./ai-action";
+import ChatPane from './components/chat-pane';
 import Broadcast from './components/broadcast';
 import { Fragment } from "react";
+import { getModelByValue } from "@/lib/ai-model";
 
 export default function Page() {
   const ais = [
-    {className: "flex-1 border-r border-r-teal-500 p-2"},
-    {className: "flex-1 border-r border-r-teal-500 p-2"},
-    {className: 'flex-1 border-teal-500 p-2'},
+    {modelValue: 'gpt-3.5-turbo', className: ""},
+    {modelValue: 'gpt-4', className: ""},
+    {modelValue: 'firefunction-v1', className: ""},
   ]
+  
+  const AIActions:typeof AIAction[] = ais.map((ai) => 
+    createAIAction({initialModel: getModelByValue(ai.modelValue)!})
+  )
 
   return (
     <div className='h-full flex flex-col'>
-      <div className='flex-1 flex flex-row'>
-        {ais.map((ai, index) => <Fragment key={index}>
-          {index === 0 ? null : 
-            // cursor-col-resize
-            <div className="w-1 h-full bg-teal-600">&nbsp;</div>
-          }
-          <AIAction key={index}>
-            <ChatPage className={ai.className} />
-          </AIAction>
-        </Fragment>)}
+      <div className='h-full flex-1 flex flex-row text-xs overflow-auto min-h-0'>
+        {ais.map((ai, index) => {
+          const CustomAIAction = AIActions[index]
+          return <Fragment key={index}>
+            {index === 0 ? null : 
+              // cursor-col-resize
+              <div className="w-1 h-full bg-teal-600">&nbsp;</div>
+            }
+            <CustomAIAction>
+              <ChatPane className={ai.className} />
+            </CustomAIAction>
+          </Fragment>
+        })}
       </div>
       
-      <hr />
-      <p>Broadcast</p>
-      <Broadcast />
-
+      <Broadcast className="w-screen bottom-0 flex min-h-12" />
     </div>
   )
 }
