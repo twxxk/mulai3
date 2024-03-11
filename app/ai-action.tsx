@@ -8,6 +8,7 @@ import Image from 'next/image'
 import ChatMessage, { ChatContentMarkdown } from '@/lib/components/chat-message';
 import { WeatherCard } from '@/components/component/weather-card';
 import { OpenWeatherMapErrorResponse, OpenWeatherMapResponse } from '@/lib/open-weather-map';
+import { ChatCompletion, ChatCompletionMessageParam } from 'openai/resources/index.mjs';
  
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -141,16 +142,18 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
       },
     ]
   });
+  // console.log(aiState.get().messages);
  
   // The `render()` creates a generated, streamable UI.
   //  console.log('model:', aiState.get().model)
   const ui:React.ReactNode = render({
     model: aiState.get().model.sdkModelValue,
     provider: getProvider(aiState.get().model),
-    messages: [
-      { role: 'system', content: 'You are a helpful assistant' },
-      { role: 'user', content: userInput }
-    ],
+    messages: 
+      [
+        { role: 'system', content: 'You are a helpful assistant' },
+        ...aiState.get().messages.map((message) => ({role: message.role, content: message.content})) as ChatCompletionMessageParam[],
+      ],
     // `text` is called when an AI returns a text response (as opposed to a tool call).
     // Its content is streamed from the LLM, so this function will be called
     // multiple times with `content` being incremental.
