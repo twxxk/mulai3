@@ -89,14 +89,14 @@ export default function ChatPane({className}:{className?:string}) {
         ...currentUIState.messages,
         {
           id: Date.now(),
-          display: <ChatMessage role="user">{inputValue}</ChatMessage>,
+          display: <ChatMessage locale={locale} role="user">{inputValue}</ChatMessage>,
         },
       ]
     }))
     setInputValue(''); // clear in the next renderering
 
     // Submit and get response message
-    const responseMessage = await submitUserMessage(inputValue);
+    const responseMessage = await submitUserMessage(locale, inputValue);
     setUIState((currentUIState) => ({
       ...currentUIState,
       messages: [
@@ -104,7 +104,7 @@ export default function ChatPane({className}:{className?:string}) {
         responseMessage,
       ]
     }));
-  }, [inputValue, setInputValue, setUIState, submitUserMessage])
+  }, [inputValue, setInputValue, setUIState, submitUserMessage, locale])
 
   const handleResetMessages = useCallback(() => {
     console.log('reset')

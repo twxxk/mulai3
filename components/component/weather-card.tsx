@@ -3,12 +3,15 @@
  * @see https://v0.dev/t/TZDgA3QZrEc
  */
 import { CardContent, Card } from "@/components/ui/card"
+import { getTranslations } from "@/lib/locale-context"
 import { OpenWeatherMapResponse, OpenWeatherMapWeather } from "@/lib/open-weather-map"
 import { DropletsIcon, ThermometerIcon } from "lucide-react"
 import Image from 'next/image'
 
-export function WeatherCard({weather}:{weather:OpenWeatherMapResponse}) {
+export function WeatherCard({locale, weather}:{locale:string, weather:OpenWeatherMapResponse}) {
   // console.log(weather)
+  const {t} = getTranslations(locale)
+
   return (
     <Card className="w-60">
       {/* WeatherIcon has padding so we adjust paddings */}
@@ -18,7 +21,7 @@ export function WeatherCard({weather}:{weather:OpenWeatherMapResponse}) {
             <p className="text-sm font-medium tracking-wide text-gray-500 dark:text-gray-400">
               {/* city */ weather.name}</p>
             <p className="text-xl font-semibold leading-none">
-              {weather.weather[0].description}</p>
+              {t(weather.weather[0].description) ?? weather.weather[0].description}</p>
           </div>
           <div className="flex flex-col text-center right-0">
             <WeatherIcon weather={weather.weather[0]} size={16} />

@@ -19,10 +19,9 @@ function CodeCopyBtn({children}:{children:React.Component<any, any>}) {
     )
 }
     
-export default function ChatMessage({role, children}:{role:string, children:React.ReactNode}) {
+export default function ChatMessage({locale, role, children}:{locale:string, role:string, children:React.ReactNode}) {
     // const locale = useContext(LocaleContext) // server componennt cannot call useContext
     // const locale = headers().get('x-negotiated-locale') ?? 'en' as string // You're importing a component that needs next/headers. That only works in a Server Component which is not supported in the pages/ directory. Read more: https://nextjs.org/docs/getting-started/ │ react-essentials#server-components
-    const locale = 'en' // XXX
     const {t} = getTranslations(locale)
 
   return (

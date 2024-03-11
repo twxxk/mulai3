@@ -18,6 +18,18 @@ const en:{[key:string]: any} = {
 	describeImageModelsLabel: 'Describe Image',
 	generateImageModelsLabel: 'Generate Image',
 	randomModelsLabel: 'Random',
+
+	// https://openweathermap.org/weather-conditions
+	'clear sky': 'clear sky',
+	'few clouds': 'few clouds',
+	'scattered clouds': 'scattered clouds',
+	'overcast clouds': 'overcast clouds',
+	'broken clouds': 'broken clouds',
+	'shower rain': 'shower rain',
+	'rain': 'rain',
+	'thunderstorm': 'thunderstorm',
+	'snow': 'snow',
+	'mist': 'mist',
 } as const
 
 const ja:{[key:string]: any} = {
@@ -40,6 +52,17 @@ const ja:{[key:string]: any} = {
 	describeImageModelsLabel: '画像説明',
 	generateImageModelsLabel: '画像生成',
 	randomModelsLabel: 'ランダム',
+
+	'clear sky': 'はれ',
+	'few clouds': 'はれ時々くもり',
+	'scattered clouds': 'くもり',
+	'overcast clouds': 'くもり',
+	'broken clouds': 'くもり',
+	'shower rain': '一時雨',
+	'rain': '雨',
+	'thunderstorm': '雷',
+	'snow': '雪',
+	'mist': '霧',
 } as const
 
 export const dictionary:{[lang:string]:{[key:string]:any}} = {en, ja}

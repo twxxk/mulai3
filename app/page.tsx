@@ -6,9 +6,9 @@ import { getModelByValue } from "@/lib/ai-model";
 
 export default function Page() {
   const ais = [
+    {modelValue: 'firefunction-v1', className: ""},
     {modelValue: 'gpt-3.5-turbo', className: ""},
     {modelValue: 'gpt-4', className: ""},
-    {modelValue: 'firefunction-v1', className: ""},
   ]
   
   const AIActions:typeof AIAction[] = ais.map((ai) => 

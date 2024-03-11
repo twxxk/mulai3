@@ -10,6 +10,7 @@ import { WeatherCard } from '@/components/component/weather-card';
 import { OpenWeatherMapErrorResponse, OpenWeatherMapResponse } from '@/lib/open-weather-map';
 import { ChatCompletion, ChatCompletionMessageParam, ImageGenerateParams } from 'openai/resources/index.mjs';
 import { Card, CardContent } from '@/components/ui/card';
+import { getTranslations } from '@/lib/locale-context';
  
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -88,7 +89,7 @@ async function getCurrentWeather(city:string) {
     return json as OpenWeatherMapErrorResponse
 }  
 
-function WeatherCardOrError({ city, weatherInfo }: { city: string, weatherInfo: OpenWeatherMapResponse | OpenWeatherMapErrorResponse }) {
+function WeatherCardOrError({ locale, city, weatherInfo }: { locale: string, city: string, weatherInfo: OpenWeatherMapResponse | OpenWeatherMapErrorResponse }) {
   if (weatherInfo.cod !== 200) {
     return (
       <div>
@@ -97,7 +98,7 @@ function WeatherCardOrError({ city, weatherInfo }: { city: string, weatherInfo: 
     )
   }
   return (
-    <WeatherCard weather={weatherInfo as OpenWeatherMapResponse} />
+    <WeatherCard locale={locale} weather={weatherInfo as OpenWeatherMapResponse} />
   )
 }
 
@@ -139,8 +140,9 @@ type MessageUIState = {
   display: React.ReactNode;
 }
 
-async function submitUserMessage(userInput: string):Promise<MessageUIState> {
+async function submitUserMessage(locale: string, userInput: string):Promise<MessageUIState> {
   'use server';
+  const {t} = getTranslations(locale)
  
   const aiState = getMutableAIState<typeof AIAction>();
 
@@ -185,7 +187,7 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
         });
       }
  
-      return <ChatMessage role="assistant">{content}</ChatMessage>
+      return <ChatMessage locale={locale} role="assistant">{content}</ChatMessage>
     },
     // Some models (fireworks, perplexity) just ignore and some (groq) throw errors
     ...(aiState.get().model.doesToolSupport ? {
@@ -301,7 +303,7 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
                   },
                 ]
               });
-              return <WeatherCardOrError city={city} weatherInfo={weatherInfo} />  
+              return <WeatherCardOrError locale={locale} city={city} weatherInfo={weatherInfo} />  
             } catch (e:any) {
               console.log('got error', e, city)
               aiState.done({
