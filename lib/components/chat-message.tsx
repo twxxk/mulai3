@@ -3,21 +3,9 @@ import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/default-highlig
 import { a11yDark  } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import remarkGfm from 'remark-gfm';
 import rehypeExternalLinks from 'rehype-external-links'
-import { getTranslations } from "@/lib/locale-context";
-import { ClipboardCopyIcon } from 'lucide-react';
-
-// FIXME Client Component only
-function CodeCopyBtn({children}:{children:React.Component<any, any>}) {
-    const handleClick = () => {
-      navigator.clipboard.writeText(children?.props?.children);
-    }
-    return (
-      <button onClick={handleClick} className="text-teal-600 enabled:hover:text-teal-500 enabled:active:text-teal-100">
-        <ClipboardCopyIcon className="h-5 w-5" />
-        <span className='sr-only'>Copy</span>
-      </button>
-    )
-}
+import { getTranslations } from "@/lib/locale-context"; 
+import ContentCopyButton from './client/content-copy-button';
+import { ReactElement } from 'react';
     
 export default function ChatMessage({locale, role, children}:{locale:string, role:string, children:React.ReactNode}) {
     // const locale = useContext(LocaleContext) // server componennt cannot call useContext
@@ -29,7 +17,7 @@ export default function ChatMessage({locale, role, children}:{locale:string, rol
     /* #2b2b2b=a11yDark */
     "rounded-sm px-2 py-1 m-1 max-w-full text-sm leading-normal prose prose-sm prose-p:mt-0 prose-pre:mt-1 prose-pre:mb-1 prose-pre:bg-[#2b2b2b] prose-img:my-1 " + 
     (role === "user"
-      ? " bg-slate-50"
+      ? " bg-slate-100"
       : role === "assistant"
       ? " "
       : process.env.NODE_ENV !== 'development'
@@ -75,11 +63,12 @@ export function ChatContentMarkdown({
             return (<img className="max-w-64 max-h-64" alt={alt ?? ''} {...props} />)
         },
         pre({children}) {
+          const text = extractTextFromElement(children)
             return (
             <div className='relative'>
                 {children}
                 <div className='absolute top-1 right-1'>
-                {/* <CodeCopyBtn>{children as any}</CodeCopyBtn> */}
+                <ContentCopyButton text={text} />
                 </div>
             </div>
             )
@@ -100,4 +89,21 @@ export function ChatContentMarkdown({
     }}>
     {children?.toString()}
     </ReactMarkdown>
+}
+
+function extractTextFromElement(element:any):string {
+  if (typeof element === 'string' || typeof element === 'number') {
+    return element.toString();
+  }
+
+  if (element.length > 0) {
+    return element.map((child:any) => extractTextFromElement(child)).join('');
+  }
+
+  const children = element?.props?.children
+  if (children) {
+    return extractTextFromElement(children)
+  }
+
+  return '';
 }
