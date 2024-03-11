@@ -8,6 +8,12 @@ const nextConfig = {
             port: '',
             pathname: '/img/**',
           },
+          {
+            protocol: 'https',
+            hostname: 'oaidalleapiprodscus.blob.core.windows.net',
+            port: '',
+            pathname: '/private/org-t6YbspjApFkQzpyeG5NwqFZD/user-X8vbPtNgIX4CApiHOzSYy0KH/**',
+          },
         ],
     },    
 };

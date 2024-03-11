@@ -106,6 +106,18 @@ export default function ChatPane({className}:{className?:string}) {
     }));
   }, [inputValue, setInputValue, setUIState, submitUserMessage])
 
+  const handleResetMessages = useCallback(() => {
+    console.log('reset')
+    setUIState((currentUIState) => ({
+      ...currentUIState,
+      messages: []
+    }))
+    setAIState((currentAIState) => ({
+      ...currentAIState,
+      messages: [],
+    }))
+  }, [setUIState, setAIState]);
+
   useEffect(() => {
     const handleSubmitBroadcastMessage = (data:string) => {
       // console.log('onsubmit', data);
@@ -121,17 +133,6 @@ export default function ChatPane({className}:{className?:string}) {
     };
     eventBus.on(EventName.onChangeBroadcastMessage, handleChangeBroadcastMessage);
 
-    const handleResetMessages = () => {
-      console.log('reset')
-      setUIState((currentUIState) => ({
-        ...currentUIState,
-        messages: []
-      }))
-      setAIState((currentAIState) => ({
-        ...currentAIState,
-        messages: [],
-      }))
-    };
     eventBus.on(EventName.onResetMessages, handleResetMessages)
       
     return () => {
@@ -139,7 +140,7 @@ export default function ChatPane({className}:{className?:string}) {
       eventBus.removeListener(EventName.onChangeBroadcastMessage, handleChangeBroadcastMessage);
       eventBus.removeListener(EventName.onResetMessages, handleResetMessages);
     };
-  }, [handleSubmit, acceptsBroadcast]);
+  }, [handleSubmit, acceptsBroadcast, handleResetMessages]);
 
   // Can ignore a warning for the external pure function
   useEffect( // eslint-disable-line react-hooks/exhaustive-deps

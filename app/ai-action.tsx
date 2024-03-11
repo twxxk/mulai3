@@ -8,7 +8,8 @@ import Image from 'next/image'
 import ChatMessage, { ChatContentMarkdown } from '@/lib/components/chat-message';
 import { WeatherCard } from '@/components/component/weather-card';
 import { OpenWeatherMapErrorResponse, OpenWeatherMapResponse } from '@/lib/open-weather-map';
-import { ChatCompletion, ChatCompletionMessageParam } from 'openai/resources/index.mjs';
+import { ChatCompletion, ChatCompletionMessageParam, ImageGenerateParams } from 'openai/resources/index.mjs';
+import { Card, CardContent } from '@/components/ui/card';
  
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -47,7 +48,7 @@ function getProvider(model:ChatModel) {
 // An example of a spinner component. You can also import your own components,
 // or 3rd party component libraries.
 function Spinner() {
-  return <div>Loading...</div>;
+  return <div className='m-1'>Loading...</div>;
 }
 
 // for test purpose
@@ -121,9 +122,16 @@ async function getFlightInfo(flightNumber: string) {
   };
 }
 
-async function generateImages(prompt:string, negative_prompt?:string) {
-  wait(2000)
-  return ''
+async function generateImages(prompt:string, modelValue:'dall-e-2'|'dall-e-3') {
+  // https://platform.openai.com/docs/api-reference/images/create
+  const baseParams:ImageGenerateParams = { prompt: prompt, response_format: 'url' }
+  const e2Params:ImageGenerateParams = { ...baseParams, model: 'dall-e-2', size: '256x256' }
+  const e3Params:ImageGenerateParams = { ...baseParams, model: "dall-e-3", size: '1024x1024' }
+  const params = modelValue == 'dall-e-3' ? e3Params : e2Params
+
+  const responseImage = await openai.images.generate(params);
+  const data = responseImage.data.map((image) => ({...image, model: modelValue}))
+  return data
 }
 
 type MessageUIState = {
@@ -315,14 +323,16 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
           description: 'Generate images based on the given prompt',
           parameters: z.object({
             prompt: z.string().describe('the image description to be generated'),
-            negative_prompt: z.string().describe('a specific instruction or input of what not to include or what to avoid in the generated image.'),
           }),
-          render: async function* ({prompt, negative_prompt}:{prompt:string, negative_prompt:string}) {
-            console.log('generate_images', prompt, negative_prompt);
+          render: async function* ({prompt}:{prompt:string}) {
+            console.log('generate_images', prompt);
             try {
               yield <Spinner/>
 
-              const images = await generateImages(prompt, negative_prompt)
+              const results = await Promise.all([generateImages(prompt, 'dall-e-2'), generateImages(prompt, 'dall-e-3')])
+              // console.log(results)
+              const images = results.flat()
+              // console.log(images)
 
               aiState.done({
                 ...aiState.get(),
@@ -336,9 +346,18 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
                 ]
               });
 
-              return <div>Not yet implemented</div> 
+              return (
+                <Card className="m-1 p-3">
+                  <CardContent className="flex flex-row gap-3 justify-center">
+                    {images.map((image) => {
+                      const title = (image.model + ': ' + (image.revised_prompt ?? prompt)).replaceAll(/"/g, "'")
+                      return (<Image key={image.url} src={image.url!} title={title} alt={title} width={256} height={256} className='size-64 border' />)
+                      })}
+                  </CardContent>
+                </Card>
+              )
             } catch (e:any) {
-              console.log('got error', e, prompt, negative_prompt);
+              console.log('got error', e, prompt);
               aiState.done({
                 ...aiState.get(),
                 messages: [
