@@ -145,7 +145,8 @@ export default function ChatPane({className}:{className?:string}) {
     };
   }, [handleSubmit, acceptsBroadcast]);
 
-  useEffect(
+  // Can ignore a warning for the external pure function
+  useEffect( // eslint-disable-line react-hooks/exhaustive-deps
     configureHistoryAutoScroll(historyElementRef),
   [historyElementRef]);
     
