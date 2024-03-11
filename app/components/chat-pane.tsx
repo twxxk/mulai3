@@ -122,19 +122,15 @@ export default function ChatPane({className}:{className?:string}) {
     eventBus.on(EventName.onChangeBroadcastMessage, handleChangeBroadcastMessage);
 
     const handleResetMessages = () => {
-      console.log('reset') // XXX nyi
-      // handleChangeBroadcastMessage('')
-      // setUIState((currentUIState) => ({
-      //   ...currentUIState,
-      //   messages: []
-      // }))
-      // setAIState((currentAIState) => ({
-      //   ...currentAIState,
-      //   messages: [{
-      //     role: 'user',
-      //     content: 'Reset the conversation.',
-      //   }],
-      // }))
+      console.log('reset')
+      setUIState((currentUIState) => ({
+        ...currentUIState,
+        messages: []
+      }))
+      setAIState((currentAIState) => ({
+        ...currentAIState,
+        messages: [],
+      }))
     };
     eventBus.on(EventName.onResetMessages, handleResetMessages)
       

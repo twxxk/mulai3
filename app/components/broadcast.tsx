@@ -46,10 +46,10 @@ export default function Broadcast({className}:{className?: string}) {
           <SendIcon className="size-5" />
           <span className="sr-only">Send</span>
         </button>
-        <button onClick={(e)=>{
+        <button type="button" onClick={(e)=>{
             eventBus.emit(EventName.onResetMessages)
           }} 
-          className='hidden p-1 disabled:text-gray-300 enabled:text-teal-900 enabled:hover:text-teal-700 enabled:active:text-teal-600'
+          className='p-1 disabled:text-gray-300 enabled:text-teal-900 enabled:hover:text-teal-700 enabled:active:text-teal-600'
           >
           <Trash2Icon className="size-5" />
           <span className="sr-only">Trash</span>
