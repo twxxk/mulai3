@@ -121,6 +121,11 @@ async function getFlightInfo(flightNumber: string) {
   };
 }
 
+async function generateImages(prompt:string, negative_prompt?:string) {
+  wait(2000)
+  return ''
+}
+
 type MessageUIState = {
   id: number;
   display: React.ReactNode;
@@ -152,7 +157,7 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
     messages: 
       [
         { role: 'system', content: 'You are a helpful assistant' },
-        ...aiState.get().messages.map((message) => ({role: message.role, content: message.content})) as ChatCompletionMessageParam[],
+        ...aiState.get().messages as ChatCompletionMessageParam[],
       ],
     // `text` is called when an AI returns a text response (as opposed to a tool call).
     // Its content is streamed from the LLM, so this function will be called
@@ -218,7 +223,7 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
                   ...aiState.get().messages,
                   {
                     role: "function",
-                    name: "get_app_info",
+                    name: "get_flight_info",
                     content: e.toString(),
                   },
                 ]
@@ -259,7 +264,7 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
                   ...aiState.get().messages,
                   {
                     role: "function",
-                    name: "get_app_info",
+                    name: "get_mulai3_app_info",
                     content: e.toString(),
                   },
                 ]
@@ -283,7 +288,7 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
                   ...aiState.get().messages,
                   {
                     role: "function",
-                    name: "get_app_info",
+                    name: "get_current_weather",
                     content: JSON.stringify(weatherInfo),
                   },
                 ]
@@ -297,7 +302,50 @@ async function submitUserMessage(userInput: string):Promise<MessageUIState> {
                   ...aiState.get().messages,
                   {
                     role: "function",
-                    name: "get_app_info",
+                    name: "get_current_weather",
+                    content: e.toString(),
+                  },
+                ]
+              });
+              return <span>{e.toString()}</span>                
+            }
+          }
+        } as any,
+        generate_images: {
+          description: 'Generate images based on the given prompt',
+          parameters: z.object({
+            prompt: z.string().describe('the image description to be generated'),
+            negative_prompt: z.string().describe('a specific instruction or input of what not to include or what to avoid in the generated image.'),
+          }),
+          render: async function* ({prompt, negative_prompt}:{prompt:string, negative_prompt:string}) {
+            console.log('generate_images', prompt, negative_prompt);
+            try {
+              yield <Spinner/>
+
+              const images = await generateImages(prompt, negative_prompt)
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    role: "function",
+                    name: "generate_images",
+                    content: JSON.stringify(images),
+                  },
+                ]
+              });
+
+              return <div>Not yet implemented</div> 
+            } catch (e:any) {
+              console.log('got error', e, prompt, negative_prompt);
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    role: "function",
+                    name: "generate_images",
                     content: e.toString(),
                   },
                 ]
