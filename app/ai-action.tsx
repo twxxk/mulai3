@@ -5,12 +5,12 @@ import { createAI, getMutableAIState, render } from "ai/rsc";
 import { z } from "zod";
 import { ChatModel, getModelByValue } from '@/lib/ai-model';
 import Image from 'next/image'
-import ChatMessage, { ChatContentMarkdown } from '@/lib/components/chat-message';
+import ChatMessage from '@/components/component/chat-message';
 import { WeatherCard } from '@/components/component/weather-card';
 import { OpenWeatherMapErrorResponse, OpenWeatherMapResponse } from '@/lib/open-weather-map';
-import { ChatCompletion, ChatCompletionMessageParam, ImageGenerateParams } from 'openai/resources/index.mjs';
+import { ChatCompletionMessageParam, ImageGenerateParams } from 'openai/resources/index.mjs';
 import { Card, CardContent } from '@/components/ui/card';
-import { getTranslations } from '@/lib/locale-context';
+import { getTranslations } from '@/lib/localizations';
  
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

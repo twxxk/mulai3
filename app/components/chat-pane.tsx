@@ -5,9 +5,9 @@ import { useUIState, useActions, useAIState } from "ai/rsc";
 import type { AIAction } from "../ai-action";
 import { ChatModel, allModels, getModelByValue, openAiCompatipleProviders } from '@/lib/ai-model';
 import { eventBus, EventName } from "@/lib/event-emitter"
-import { getTranslations } from "@/lib/locale-context";
-import { LocaleContext } from "@/lib/locale-provider";
-import ChatMessage from '@/lib/components/chat-message';
+import { getTranslations } from "@/lib/localizations";
+import { LocaleContext } from "@/lib/client/locale-context";
+import ChatMessage from '@/components/component/chat-message';
 import EnterableTextarea from './enterable-textarea';
 import { SendIcon } from 'lucide-react';
 

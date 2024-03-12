@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { headers } from "next/headers";
-import { LocaleProvider } from "@/lib/locale-provider";
+import { LocaleProvider } from "@/lib/client/locale-context";
 import { Suspense } from "react";
 import ModelLinks from "./components/model-links";
-import { LanguageSelector } from "./components/language-selector";
+import { LanguageSelector } from "../components/client/language-selector";
  
 export const metadata: Metadata = {
   title: (process.env.NODE_ENV === 'development' ? '(dev) ' : '')

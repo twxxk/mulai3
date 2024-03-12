@@ -3,9 +3,9 @@
 import { BookMarkedIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { allModelValues } from "@/lib/ai-model";
-import { DropdownMenuTrigger, DropdownMenuItem, DropdownMenuGroup, DropdownMenuContent, DropdownMenu } from "@/app/components/dropdown-menu"
-import { getTranslations } from "@/lib/locale-context";
-import { LocaleContext } from "@/lib/locale-provider";
+import { DropdownMenuTrigger, DropdownMenuItem, DropdownMenuGroup, DropdownMenuContent, DropdownMenu } from "@/components/ui/dropdown-menu"
+import { getTranslations } from "@/lib/localizations";
+import { LocaleContext } from "@/lib/client/locale-context";
 import { useContext } from "react";
 
 // true random - from all models including non-selectable models

@@ -1,8 +1,8 @@
 'use client'
 
 import { eventBus, EventName } from "@/lib/event-emitter"
-import { getTranslations } from "@/lib/locale-context";
-import { LocaleContext } from "@/lib/locale-provider";
+import { getTranslations } from "@/lib/localizations";
+import { LocaleContext } from "@/lib/client/locale-context";
 import { SendIcon, Trash2Icon } from "lucide-react";
 import { useContext, useRef, useState } from "react";
 import EnterableTextarea from "./enterable-textarea";
