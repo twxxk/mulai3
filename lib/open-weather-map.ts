@@ -23,5 +23,4 @@ export type OpenWeatherMapResponse = {
     id: number,
     name: string,
     cod: number,
-  }
-  
+}

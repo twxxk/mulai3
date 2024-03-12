@@ -214,7 +214,7 @@ export default function ChatPane({className}:{className?:string}) {
           />
           {t('acceptsBroadCast')}
         </label>
-        <label className='whitespace-nowrap overflow-hidden mx-2'>
+        <label className={(chatModel.doesToolSupport ? '' : 'hidden ') + ' whitespace-nowrap overflow-hidden mx-2'}>
           <input type="checkbox" className='mr-1'
             disabled={!chatModel.doesToolSupport}
             checked={doesCallTools}
