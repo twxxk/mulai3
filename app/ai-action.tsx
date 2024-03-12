@@ -328,10 +328,28 @@ async function submitUserMessage(locale: string, userInput: string):Promise<Mess
           }),
           render: async function* ({prompt}:{prompt:string}) {
             console.log('generate_images', prompt);
+            const modelNames = [
+              'dall-e-2', 
+              'dall-e-3'
+            ] as const
             try {
-              yield <Spinner/>
-
-              const results = await Promise.all([generateImages(prompt, 'dall-e-2'), generateImages(prompt, 'dall-e-3')])
+              yield (
+                <Card className="m-1 p-3">
+                  <CardContent className="flex flex-row gap-3 justify-center">
+                    {modelNames.map((modelName) => {
+                      const generatingTitle = `${modelName} generating an image: ${prompt}`;
+                      return (<div key={modelName} title={generatingTitle} className='size-64 border animate-pulse grid place-content-center place-items-center gap-3'>
+                        <div className="rounded-3xl bg-slate-200 size-24 mx-auto"></div>
+                        <div className="rounded w-32 h-3 bg-slate-200"></div>
+                        <div className="rounded w-32 h-3 bg-slate-200"></div>
+                      </div>)
+                    })}
+                  </CardContent>
+                </Card>
+              )
+              
+              const results = await Promise.all(
+                modelNames.map((modelName) => generateImages(prompt, modelName)))
               // console.log(results)
               const images = results.flat()
               // console.log(images)
@@ -352,9 +370,9 @@ async function submitUserMessage(locale: string, userInput: string):Promise<Mess
                 <Card className="m-1 p-3">
                   <CardContent className="flex flex-row gap-3 justify-center">
                     {images.map((image) => {
-                      const title = (image.model + ': ' + (image.revised_prompt ?? prompt)).replaceAll(/"/g, "'")
+                      const title = image.model + ': ' + (image.revised_prompt ?? prompt)
                       return (<Image key={image.url} src={image.url!} title={title} alt={title} width={256} height={256} className='size-64 border' />)
-                      })}
+                    })}
                   </CardContent>
                 </Card>
               )
