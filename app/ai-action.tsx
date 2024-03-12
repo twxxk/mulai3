@@ -140,10 +140,8 @@ type MessageUIState = {
   display: React.ReactNode;
 }
 
-async function submitUserMessage(locale: string, userInput: string):Promise<MessageUIState> {
+async function submitUserMessage(locale: string, userInput: string, doesCallTools: boolean):Promise<MessageUIState> {
   'use server';
-  const {t} = getTranslations(locale)
- 
   const aiState = getMutableAIState<typeof AIAction>();
 
   // Update the AI state with the new user message.
@@ -190,7 +188,7 @@ async function submitUserMessage(locale: string, userInput: string):Promise<Mess
       return <ChatMessage locale={locale} role="assistant">{content}</ChatMessage>
     },
     // Some models (fireworks, perplexity) just ignore and some (groq) throw errors
-    ...(aiState.get().model.doesToolSupport ? {
+    ...(doesCallTools ? {
       tools: {
         get_flight_info: {
           description: 'Get the information for a flight',

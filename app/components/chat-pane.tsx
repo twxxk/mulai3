@@ -81,6 +81,8 @@ export default function ChatPane({className}:{className?:string}) {
   const historyElementRef = useRef(null);
   const formRef = useRef<HTMLFormElement>(null)
 
+  const [doesCallTools, setDoesCallTools] = useState<boolean>(!!chatModel.doesToolSupport)
+
   const handleSubmit = useCallback(async () => { 
     // Add user message to UI state
     setUIState((currentUIState) => ({
@@ -96,7 +98,7 @@ export default function ChatPane({className}:{className?:string}) {
     setInputValue(''); // clear in the next renderering
 
     // Submit and get response message
-    const responseMessage = await submitUserMessage(locale, inputValue);
+    const responseMessage = await submitUserMessage(locale, inputValue, doesCallTools);
     setUIState((currentUIState) => ({
       ...currentUIState,
       messages: [
@@ -104,7 +106,7 @@ export default function ChatPane({className}:{className?:string}) {
         responseMessage,
       ]
     }));
-  }, [inputValue, setInputValue, setUIState, submitUserMessage, locale])
+  }, [inputValue, setInputValue, setUIState, submitUserMessage, locale, doesCallTools])
 
   const handleResetMessages = useCallback(() => {
     console.log('reset')
@@ -176,6 +178,7 @@ export default function ChatPane({className}:{className?:string}) {
             ...currentAIState,
             model: newModel,
           }))
+          setDoesCallTools(!!newModel.doesToolSupport)
         }}>
           {openaiCompatibleTextModels.map((model) => (
             <option key={model.sdkModelValue} value={model.modelValue}>{model.label}</option>
@@ -210,6 +213,14 @@ export default function ChatPane({className}:{className?:string}) {
             onChange={() => setAcceptsBroadcast(!acceptsBroadcast)}
           />
           {t('acceptsBroadCast')}
+        </label>
+        <label className='whitespace-nowrap overflow-hidden mx-2'>
+          <input type="checkbox" className='mr-1'
+            disabled={!chatModel.doesToolSupport}
+            checked={doesCallTools}
+            onChange={() => setDoesCallTools(!doesCallTools)}
+          />
+          {t('usesCallFunctions')}
         </label>
       </form>
     </article>
