@@ -20,6 +20,10 @@ const en:{[key:string]: any} = {
 	generateImageModelsLabel: 'Generate Image',
 	randomModelsLabel: 'Random',
 
+	authorLabel: 'author: twk',
+	mulaiTitleLabel: 'More Client Components with more models & image descriptions',
+	mulai3TitleLabel: 'More RSC with function calls',
+
 	// https://openweathermap.org/weather-conditions
 	'clear sky': 'clear sky',
 	'few clouds': 'few clouds',
@@ -54,6 +58,10 @@ const ja:{[key:string]: any} = {
 	describeImageModelsLabel: '画像説明',
 	generateImageModelsLabel: '画像生成',
 	randomModelsLabel: 'ランダム',
+
+	authorLabel: '作者: twk',
+	mulaiTitleLabel: 'モデル多数。画像説明あり。クライアントコンポーネント',
+	mulai3TitleLabel: '関数呼び出しあり。RSC',
 
 	'clear sky': 'はれ',
 	'few clouds': 'はれ時々くもり',

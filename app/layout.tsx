@@ -5,6 +5,7 @@ import { LocaleProvider } from "@/lib/client/locale-context";
 import { Suspense } from "react";
 import ModelLinks from "./components/model-links";
 import { LanguageSelector } from "../components/client/language-selector";
+import InfoLinks from "@/lib/client/info-links";
  
 export const metadata: Metadata = {
   title: (process.env.NODE_ENV === 'development' ? '(dev) ' : '')
@@ -29,12 +30,12 @@ export default function RootLayout({
           <a className='flex-1 text-xl hover:text-teal-100 active:text-teal-50  whitespace-nowrap' href="/"><h1>
           <strong className="font-bold">MulAI3</strong>
           </h1></a>
-          {/* copyright @twk all rights reserved */}
-          <a className='pt-1 text-teal-700 whitespace-nowrap overflow-x-hidden' href="https://twitter.com/twk" target="_blank" rel="noopener noreferrer">author: @twk</a>
           <Suspense>
             {/* <ModelLinks
               className="focus-visible:outline-none ml-2 mr-1 hover:text-teal-100 active:text-teal-50" /> */}
             <LanguageSelector
+              className="focus-visible:outline-none ml-1 hover:text-teal-100 active:text-teal-50" />
+            <InfoLinks selectedService="mulai3"
               className="focus-visible:outline-none ml-1 hover:text-teal-100 active:text-teal-50" />
           </Suspense>
         </header>
