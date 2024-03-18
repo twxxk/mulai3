@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+This is a multi generative AIs application.
+
+The program is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) and integrated with [`AI SDK`](https://github.com/vercel/ai).
+
+You can chat with AIs from several different platforms such as OpenAI, Fireworks.ai, Mistral, Groq, and Perplexity. Some models accept function calls.
+
+The followings are supported functions:
+- `get_flight_info` Get the information for a flight
+- `get_mulai3_app_info` Get the information of Mulai3 app
+- `get_current_weather` Get current weather information of the specified city
+- `generate_images` Generate images based on the given prompt using Dall-E 3 and 2.
+
 
 ## Getting Started
 
-First, run the development server:
+Create `.env.local` and configure several API_KEYs from `.env.example`.
+
+Run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
-
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+You can build to see lint errors on production environment.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```bash
+pnpm build
+```
 
-## Learn More
+## Deployment
 
-To learn more about Next.js, take a look at the following resources:
+The program uses edge functions (app/api/chat/route.ts). It is intended to deploy to [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ftwxxk%2Fmulai3&env=OPENAI_API_KEY,FIREWORKS_API_KEY,MISTRAL_API_KEY,GROQ_API_KEY,PERPLEXITY_API_KEY,OPENWEATHER_API_KEY&envDescription=See%20.env.example%20for%20other%20environment%20variable&demo-title=Mulai3&demo-url=https%3A%2F%2Fmulai3.vercel.app%2F)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## Reference
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+I created a brother project [`Mulai`](https://github.com/twxxk/mulai) which utilizes more React Client Components. You might also want to review it.
