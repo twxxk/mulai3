@@ -135,7 +135,7 @@ async function generateImages(prompt:string, model:ChatModel):Promise<GenerateIm
   if (model.provider === 'openai-image')
     return generateOpenaiImages(prompt, model)
   else if (model.provider === 'huggingface-image')
-    return generateHuggingFaceImage(prompt, model)
+    return generateHuggingFaceImages(prompt, model)
   else
     throw new Error(`unexpected provider: ${model.provider}`)
 }
@@ -143,9 +143,11 @@ async function generateImages(prompt:string, model:ChatModel):Promise<GenerateIm
 async function generateOpenaiImages(prompt:string, model:ChatModel):Promise<GenerateImageResponse[]> {
   // https://platform.openai.com/docs/api-reference/images/create
   const modelValue = model.modelValue
-  const baseParams:ImageGenerateParams = { prompt: prompt, response_format: 'url' }
-  const e2Params:ImageGenerateParams = { ...baseParams, model: 'dall-e-2', size: '256x256' }
+  const baseParams:ImageGenerateParams = { prompt: prompt, response_format: 'url', }
+  const e2Params:ImageGenerateParams = { ...baseParams, model: 'dall-e-2', size: '256x256', n: 2 }
+  // You must provide n=1 for this model.
   const e3Params:ImageGenerateParams = { ...baseParams, model: "dall-e-3", size: '1024x1024' }
+
   const params = modelValue == 'dall-e-3' ? e3Params : e2Params
 
   const responseImage = await openai.images.generate(params);
@@ -153,7 +155,7 @@ async function generateOpenaiImages(prompt:string, model:ChatModel):Promise<Gene
   return data
 }
 
-async function generateHuggingFaceImage(prompt:string, model:ChatModel):Promise<GenerateImageResponse[]> {
+async function generateHuggingFaceImages(prompt:string, model:ChatModel):Promise<GenerateImageResponse[]> {
   const blob:Blob = await Hf.textToImage({
       inputs: prompt
   })
@@ -272,7 +274,7 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
                   },
                 ]
               });
-              return <span>{e.toString()}</span>                
+              return <ChatMessage locale={locale} role="assistant">{e.toString()}</ChatMessage>
             }              
           }
         },
@@ -313,7 +315,7 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
                   },
                 ]
               });
-              return <span>{e.toString()}</span>                
+              return <ChatMessage locale={locale} role="assistant">{e.toString()}</ChatMessage>
             }            
           }
         } as any,
@@ -351,7 +353,7 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
                   },
                 ]
               });
-              return <span>{e.toString()}</span>                
+              return <ChatMessage locale={locale} role="assistant">{e.toString()}</ChatMessage>
             }
           }
         } as any,
@@ -364,7 +366,9 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
             console.log('generate_images', prompt);
             try {
               const models:ChatModel[] = [
-                'dall-e-2', 'dall-e-3', 'stable-diffusion-2',
+                'dall-e-2', 
+                'dall-e-3', 'dall-e-3', // multiple dall-e 3 images
+                'stable-diffusion-2',
               ].map((value) => getModelByValue(value) as ChatModel)
 
               yield (
@@ -411,7 +415,12 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
                 </Card>
               )
             } catch (e:any) {
-              console.log('got error', e, prompt);
+              if (e.error?.code === 'content_policy_violation')
+                console.log('got contnt policy violation', prompt);
+              else
+                console.log('got error', prompt, e);
+
+              const errorMessage = e.error?.message ?? e.toString()
               aiState.done({
                 ...aiState.get(),
                 messages: [
@@ -419,11 +428,15 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
                   {
                     role: "function",
                     name: "generate_images",
-                    content: e.toString(),
+                    content: errorMessage,
                   },
                 ]
               });
-              return <span>{e.toString()}</span>                
+              if (e.error?.code === 'content_policy_violation') {
+                // https://help.openai.com/en/articles/6338764-are-there-any-restrictions-to-how-i-can-use-dall-e-2-is-there-a-content-policy
+                return <ChatMessage locale={locale} role="assistant">{errorMessage}</ChatMessage>
+              }
+              return <ChatMessage locale={locale} role="assistant">{errorMessage}</ChatMessage>
             }
           }
         } as any,
