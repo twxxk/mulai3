@@ -11,6 +11,7 @@ import { OpenWeatherMapErrorResponse, OpenWeatherMapResponse } from '@/lib/open-
 import { ChatCompletionMessageParam, ImageGenerateParams } from 'openai/resources/index.mjs';
 import { Card, CardContent } from '@/components/ui/card';
 import { getTranslations } from '@/lib/localizations';
+import { HfInference } from '@huggingface/inference';
  
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -31,6 +32,7 @@ const mistral = new OpenAI({
   apiKey: process.env.MISTRAL_API_KEY,
   baseURL: 'https://api.mistral.ai/v1',
 })
+const Hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
 function getProvider(model:ChatModel) {
   const providerMap:{[key:string]:any} = {
@@ -123,16 +125,50 @@ async function getFlightInfo(flightNumber: string) {
   };
 }
 
-async function generateImages(prompt:string, modelValue:'dall-e-2'|'dall-e-3') {
+type GenerateImageResponse = {
+  url: string,
+  model: string,
+  revised_prompt?: string,
+}
+
+async function generateImages(prompt:string, model:ChatModel):Promise<GenerateImageResponse[]> {
+  if (model.provider === 'openai-image')
+    return generateOpenaiImages(prompt, model)
+  else if (model.provider === 'huggingface-image')
+    return generateHuggingFaceImage(prompt, model)
+  else
+    throw new Error(`unexpected provider: ${model.provider}`)
+}
+
+async function generateOpenaiImages(prompt:string, model:ChatModel):Promise<GenerateImageResponse[]> {
   // https://platform.openai.com/docs/api-reference/images/create
+  const modelValue = model.modelValue
   const baseParams:ImageGenerateParams = { prompt: prompt, response_format: 'url' }
   const e2Params:ImageGenerateParams = { ...baseParams, model: 'dall-e-2', size: '256x256' }
   const e3Params:ImageGenerateParams = { ...baseParams, model: "dall-e-3", size: '1024x1024' }
   const params = modelValue == 'dall-e-3' ? e3Params : e2Params
 
   const responseImage = await openai.images.generate(params);
-  const data = responseImage.data.map((image) => ({...image, model: modelValue}))
+  const data = responseImage.data.map((image) => ({url: image.url as string, model: modelValue, revised_prompt: image.revised_prompt}))
   return data
+}
+
+async function generateHuggingFaceImage(prompt:string, model:ChatModel):Promise<GenerateImageResponse[]> {
+  const blob:Blob = await Hf.textToImage({
+      inputs: prompt
+  })
+  // console.log(blob.type, blob.size, 'bytes')
+
+  const arrayBuffer = await blob.arrayBuffer();
+  const base64 = abToBase64(arrayBuffer)
+  const url = `data:${blob.type};base64,` + base64
+
+  return [{url, model: model.modelValue}]
+}
+
+function abToBase64(arrayBuffer:ArrayBuffer) {
+  const base64String = Buffer.from(arrayBuffer).toString('base64');
+  return base64String;
 }
 
 type MessageUIState = {
@@ -326,20 +362,20 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
           }),
           render: async function* ({prompt}:{prompt:string}) {
             console.log('generate_images', prompt);
-            const modelNames = [
-              'dall-e-2', 
-              'dall-e-3'
-            ] as const
             try {
+              const models:ChatModel[] = [
+                'dall-e-2', 'dall-e-3', 'stable-diffusion-2',
+              ].map((value) => getModelByValue(value) as ChatModel)
+
               yield (
                 <Card className="m-1 p-3">
-                  <CardContent className="flex flex-row gap-3 justify-center">
-                    {modelNames.map((modelName) => {
-                      const generatingTitle = `${modelName} generating an image: ${prompt}`;
-                      return (<div key={modelName} title={generatingTitle} className='size-64 border animate-pulse grid place-content-center place-items-center gap-3'>
+                  <CardContent className="flex flex-row flex-wrap gap-3 justify-center">
+                    {models.map((model) => {
+                      const generatingTitle = `${model.label} generating an image: ${prompt}`;
+                      return (<div key={model.modelValue} title={generatingTitle} className='size-64 border animate-pulse grid place-content-center place-items-center gap-3'>
                         <div className="rounded-3xl bg-slate-200 size-24 mx-auto"></div>
-                        <div className="rounded w-32 h-3 bg-slate-200"></div>
-                        <div className="rounded w-32 h-3 bg-slate-200"></div>
+                        <div className="rounded w-32 h-4 bg-slate-200 text-center font-bold">{model.label}</div>
+                        <div className="rounded w-32 max-h-16 p-1 bg-slate-200 overflow-hidden">{/* FIXME i18n */}Generating: {prompt}</div>
                       </div>)
                     })}
                   </CardContent>
@@ -347,7 +383,7 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
               )
               
               const results = await Promise.all(
-                modelNames.map((modelName) => generateImages(prompt, modelName)))
+                models.map((model) => generateImages(prompt, model)))
               // console.log(results)
               const images = results.flat()
               // console.log(images)
@@ -359,16 +395,16 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
                   {
                     role: "function",
                     name: "generate_images",
-                    content: JSON.stringify(images),
+                    content: `image prompt: ${prompt}`,
                   },
                 ]
               });
 
               return (
                 <Card className="m-1 p-3">
-                  <CardContent className="flex flex-row gap-3 justify-center">
+                  <CardContent className="flex flex-row flex-wrap  gap-3 justify-center">
                     {images.map((image) => {
-                      const title = image.model + ': ' + (image.revised_prompt ?? prompt)
+                      const title = getModelByValue(image.model)!.label + ': ' + (image.revised_prompt ?? prompt)
                       return (<Image key={image.url} src={image.url!} title={title} alt={title} width={256} height={256} className='size-64 border' />)
                     })}
                   </CardContent>
