@@ -9,8 +9,7 @@ import ChatMessage from '@/components/component/chat-message';
 import { WeatherCard } from '@/components/component/weather-card';
 import { OpenWeatherMapErrorResponse, OpenWeatherMapResponse } from '@/lib/open-weather-map';
 import { ChatCompletionMessageParam, ImageGenerateParams } from 'openai/resources/index.mjs';
-import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
-import { getTranslations } from '@/lib/localizations';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { HfInference } from '@huggingface/inference';
 import FormData from 'form-data';
  
