@@ -16,6 +16,7 @@
     "ai": "^3.0.13",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "form-data": "^4.0.0",
     "lucide-react": "^0.344.0",
     "negotiator": "^0.6.3",
     "next": "14.1.2",

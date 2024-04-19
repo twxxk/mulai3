@@ -26,6 +26,9 @@ dependencies:
   clsx:
     specifier: ^2.1.0
     version: 2.1.0
+  form-data:
+    specifier: ^4.0.0
+    version: 4.0.0
   lucide-react:
     specifier: ^0.344.0
     version: 0.344.0(react@18.2.0)
