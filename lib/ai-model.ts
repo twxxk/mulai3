@@ -24,7 +24,7 @@
 //   https://docs.anthropic.com/claude/docs/models-overview
 
 export type ModelProvider = 'openai' | 'google' | 'fireworksai' | 'huggingface' | 'cohere' | 'aws' | 'mistral' | 'groq' | 'perplexity' | 'langchain' | 'anthropic'
-    | 'openai-image' | 'huggingface-image' | 'fireworksai-image'
+    | 'openai-image' | 'huggingface-image' | 'fireworksai-image' | 'stabilityai-image'
 export const openAiCompatipleProviders:ModelProvider[] = ['openai', 'fireworksai', 'groq', 'perplexity', 'mistral'] as const
 
 // Declare the internal type to avoid build errors
@@ -120,9 +120,18 @@ const allModels0:ChatModel0[] = [
     // {label: 'Titan Text G1 - Express', provider: 'aws', modelValue: 'amazon.titan-text-express-v1', sdkModelValue: 'amazon.titan-text-express-v1', recommendScore:20},  
 
     // Image generation - Works fine, but UI should be updated
+    // $0.02 / image
     {label: 'DALL·E 2', provider: 'openai-image', modelValue: 'dall-e-2', sdkModelValue: 'dall-e-2', qualityScore: 40, japaneseScore:10},
+    // $0.04 / image
     {label: 'DALL·E 3', provider: 'openai-image', modelValue: 'dall-e-3', sdkModelValue: 'dall-e-3', qualityScore: 40, japaneseScore:40},
+    // free?
     {label: 'Stable Diffusion 2', provider: 'huggingface-image', modelValue: 'stable-diffusion-2', sdkModelValue: 'stabilityai/stable-diffusion-2', qualityScore: 40, japaneseScore:10},
+    // $0.03/1MP image
+    {label: 'Stable Image Core', provider: 'stabilityai-image', modelValue: 'stable-image-core', sdkModelValue: 'sd-core', qualityScore: 40, japaneseScore:10},
+    // $0.065/1MP image 
+    {label: 'Stable Diffusion 3', provider: 'stabilityai-image', modelValue: 'stable-diffusion-3', sdkModelValue: 'sd3', qualityScore: 40, japaneseScore:10},
+    // $0.04/1MP image 
+    {label: 'Stable Diffusion 3 Turbo', provider: 'stabilityai-image', modelValue: 'stable-diffusion-3-turbo', sdkModelValue: 'sd3-turbo', qualityScore: 40, japaneseScore:10},
 
     // basically for function calls only
     {label: 'FireFunction V1', provider: 'fireworksai', modelValue: 'firefunction-v1', sdkModelValue: 'accounts/fireworks/models/firefunction-v1', qualityScore: 0, japaneseScore: 0, doesToolSupport: true,},

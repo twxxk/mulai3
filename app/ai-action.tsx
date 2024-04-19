@@ -9,9 +9,10 @@ import ChatMessage from '@/components/component/chat-message';
 import { WeatherCard } from '@/components/component/weather-card';
 import { OpenWeatherMapErrorResponse, OpenWeatherMapResponse } from '@/lib/open-weather-map';
 import { ChatCompletionMessageParam, ImageGenerateParams } from 'openai/resources/index.mjs';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 import { getTranslations } from '@/lib/localizations';
 import { HfInference } from '@huggingface/inference';
+import FormData from 'form-data';
  
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -136,6 +137,8 @@ async function generateImages(prompt:string, model:ChatModel):Promise<GenerateIm
     return generateOpenaiImages(prompt, model)
   else if (model.provider === 'huggingface-image')
     return generateHuggingFaceImages(prompt, model)
+  else if (model.provider === 'stabilityai-image')
+    return generateStableDiffusionImages(prompt, model)
   else
     throw new Error(`unexpected provider: ${model.provider}`)
 }
@@ -144,7 +147,7 @@ async function generateOpenaiImages(prompt:string, model:ChatModel):Promise<Gene
   // https://platform.openai.com/docs/api-reference/images/create
   const modelValue = model.modelValue
   const baseParams:ImageGenerateParams = { prompt: prompt, response_format: 'url', }
-  const e2Params:ImageGenerateParams = { ...baseParams, model: 'dall-e-2', size: '256x256', n: 2 }
+  const e2Params:ImageGenerateParams = { ...baseParams, model: 'dall-e-2', size: '256x256', n: 1 }
   // You must provide n=1 for this model.
   const e3Params:ImageGenerateParams = { ...baseParams, model: "dall-e-3", size: '1024x1024' }
 
@@ -153,6 +156,62 @@ async function generateOpenaiImages(prompt:string, model:ChatModel):Promise<Gene
   const responseImage = await openai.images.generate(params);
   const data = responseImage.data.map((image) => ({url: image.url as string, model: modelValue, revised_prompt: image.revised_prompt}))
   return data
+}
+
+function createFormData(data:any) {
+  const form = new FormData();
+  Object
+    .keys(data)
+    .forEach(key => form.append(key, data[key]));
+  return form;
+  // return Object.entries(data).map(([key, value]) => encodeURIComponent(key) + '=' + encodeURIComponent(value as string)).join('&');
+}
+
+async function generateStableDiffusionImages(prompt:string, model:ChatModel):Promise<GenerateImageResponse[]> {
+  // https://platform.stability.ai/docs/api-reference#tag/Generate/paths/~1v2beta~1stable-image~1generate~1core/post
+
+  const output_format = 'png';
+
+  let apiUrl = `https://api.stability.ai/v2beta/stable-image/generate/core`;
+  let formData:any = {
+    prompt,
+    // model: model.sdkModelValue,
+    output_format,
+  };
+
+  if (model.modelValue === 'stable-diffusion-3' || model.modelValue === 'stable-diffusion-3-turbo') {
+    apiUrl = `https://api.stability.ai/v2beta/stable-image/generate/sd3`;
+    formData.model = model.sdkModelValue;
+  }
+
+  const headers = { 
+    Authorization: `Bearer ${process.env.STABILITYAI_API_KEY}`, 
+    // Accept: "image/*",
+    Accept: 'application/json',
+  };
+  const response = await fetch(
+    apiUrl, 
+    {
+      method: 'POST',
+      headers,
+      body: createFormData(formData) as any,
+    }
+  );
+  const json = await response.json() 
+
+  if (response.status !== 200) {
+    const errors:string[] = json.errors
+    console.log(json.name, errors.join('\n'), prompt);
+    throw new Error(`${response.status} ${response.statusText} ${json.name} ${errors.join(' ')}`);
+  }
+  if (json.finish_reason !== 'SUCCESS') {
+    console.log(json.finish_reason, prompt);
+    throw new Error(`Unexpected finish_reason: ${json.finish_reason}`);
+  }
+
+  const imageUrl = `data:image/${output_format};base64,` + json.image;
+
+  return [{url: imageUrl, model: model.modelValue}];
 }
 
 async function generateHuggingFaceImages(prompt:string, model:ChatModel):Promise<GenerateImageResponse[]> {
@@ -365,10 +424,14 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
           render: async function* ({prompt}:{prompt:string}) {
             console.log('generate_images', prompt);
             try {
+              // You might have multiple models in the array to generate multiple images with the same model
               const models:ChatModel[] = [
                 'dall-e-2', 
-                'dall-e-3', 'dall-e-3', // multiple dall-e 3 images
+                'dall-e-3', 
                 'stable-diffusion-2',
+                'stable-image-core',
+                'stable-diffusion-3',
+                'stable-diffusion-3-turbo',
               ].map((value) => getModelByValue(value) as ChatModel)
 
               yield (
@@ -404,16 +467,18 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
                 ]
               });
 
-              return (
-                <Card className="m-1 p-3">
-                  <CardContent className="flex flex-row flex-wrap  gap-3 justify-center">
-                    {images.map((image) => {
-                      const title = getModelByValue(image.model)!.label + ': ' + (image.revised_prompt ?? prompt)
-                      return (<Image key={image.url} src={image.url!} title={title} alt={title} width={256} height={256} className='size-64 border' />)
-                    })}
-                  </CardContent>
-                </Card>
-              )
+              return <>{images.map((image) => {
+                const model = getModelByValue(image.model)
+                const title = model!.label + ': ' + (image.revised_prompt ?? prompt)
+                return (
+                  <Card className="m-1 p-3"　key={image.url}>
+                    <CardHeader><b>{model!.label}: </b>{image.revised_prompt ?? prompt}</CardHeader>
+                    <CardContent className="flex flex-row flex-wrap gap-3 justify-center">
+                      <Image src={image.url!} title={title} alt={title} width={256} height={256} className='size-64 border' />
+                    </CardContent>
+                  </Card>
+                )
+              })}</>
             } catch (e:any) {
               if (e.error?.code === 'content_policy_violation')
                 console.log('got contnt policy violation', prompt);
