@@ -163,7 +163,6 @@ function createFormData(data:any) {
     .keys(data)
     .forEach(key => form.append(key, data[key]));
   return form;
-  // return Object.entries(data).map(([key, value]) => encodeURIComponent(key) + '=' + encodeURIComponent(value as string)).join('&');
 }
 
 async function generateStableDiffusionImages(prompt:string, model:ChatModel):Promise<GenerateImageResponse[]> {
