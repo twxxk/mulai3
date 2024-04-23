@@ -251,7 +251,235 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
     ]
   });
   // console.log(aiState.get().messages);
- 
+
+  // tools or function call definitions
+  const get_flight_info = {
+    description: 'Get the information for a flight',
+    parameters: z.object({
+      flightNumber: z.string().describe('the number of the flight')
+    }).required(),
+    render: async function* ({flightNumber}:{flightNumber:string}) {
+      console.log('get_flight_info', flightNumber);
+      try {
+        // Show a spinner on the client while we wait for the response.
+        yield <Spinner/>
+
+        // console.log(typeof params)
+
+        console.log('flight#', flightNumber)
+        // Fetch the flight information from an external API.
+        const flightInfo = await getFlightInfo(flightNumber)
+        console.log('flightInfo:', flightInfo)
+
+        // Update the final AI state.
+        aiState.done({
+          ...aiState.get(),
+          messages: [
+            ...aiState.get().messages,
+            {
+              role: "function",
+              name: "get_flight_info",
+              // Content can be any string to provide context to the LLM in the rest of the conversation.
+              content: JSON.stringify(flightInfo),
+            }
+        ]});
+
+        // Return the flight card to the client.
+        return <FlightCard flightInfo={flightInfo} />
+      } catch (e:any) {
+        console.log('got error', e, flightNumber)
+        aiState.done({
+          ...aiState.get(),
+          messages: [
+            ...aiState.get().messages,
+            {
+              role: "function",
+              name: "get_flight_info",
+              content: e.toString(),
+            },
+          ]
+        });
+        return <ChatMessage locale={locale} role="assistant">{e.toString()}</ChatMessage>
+      }              
+    }
+  };
+  const get_mulai3_app_info = {
+    description: 'Get the information of Mulai3 app',
+    parameters: z.object({}), // no params
+    render: async function* () {
+      console.log('get_mulai3_app_info');
+      try {
+        yield <Spinner />
+        await wait(2000);
+        const appInfo = await getAppInfo()  
+
+        aiState.done({
+          ...aiState.get(),
+          messages: [
+            ...aiState.get().messages,
+            {
+              role: "function",
+              name: "get_mulai3_app_info",
+              content: JSON.stringify(appInfo),
+            },
+          ]
+        });
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        return <AppCard appInfo={appInfo} />
+      } catch (e:any) {
+        console.log('got error', e)
+        aiState.done({
+          ...aiState.get(),
+          messages: [
+            ...aiState.get().messages,
+            {
+              role: "function",
+              name: "get_mulai3_app_info",
+              content: e.toString(),
+            },
+          ]
+        });
+        return <ChatMessage locale={locale} role="assistant">{e.toString()}</ChatMessage>
+      }            
+    }
+  };
+  const get_current_weather = {
+    description: 'Get current weather information of the specified city',
+    parameters: z.object({
+      city: z.string().describe('the city to get current weather')
+    }).required(),
+    render: async function* ({city}:{city:string}) {
+      console.log('get_current_weather', city);
+      try {
+        const weatherInfo = await getCurrentWeather(city)  
+        aiState.done({
+          ...aiState.get(),
+          messages: [
+            ...aiState.get().messages,
+            {
+              role: "function",
+              name: "get_current_weather",
+              content: JSON.stringify(weatherInfo),
+            },
+          ]
+        });
+        return <WeatherCardOrError locale={locale} city={city} weatherInfo={weatherInfo} />  
+      } catch (e:any) {
+        console.log('got error', e, city)
+        aiState.done({
+          ...aiState.get(),
+          messages: [
+            ...aiState.get().messages,
+            {
+              role: "function",
+              name: "get_current_weather",
+              content: e.toString(),
+            },
+          ]
+        });
+        return <ChatMessage locale={locale} role="assistant">{e.toString()}</ChatMessage>
+      }
+    }
+  };
+  const generate_images = {
+    description: 'Generate images based on the given prompt',
+    parameters: z.object({
+      prompt: z.string().describe('the image description to be generated'),
+    }),
+    render: async function* ({prompt}:{prompt:string}) {
+      console.log('generate_images', prompt);
+      try {
+        // You might have multiple models in the array to generate multiple images with the same model
+        const models:ChatModel[] = [
+          'dall-e-2', 
+          'dall-e-3', 
+          'stable-diffusion-2',
+          'stable-image-core',
+          'stable-diffusion-3',
+          'stable-diffusion-3-turbo',
+        ].map((value) => getModelByValue(value) as ChatModel)
+
+        yield (
+          <Card className="m-1 p-3">
+            <CardContent className="flex flex-row flex-wrap gap-3 justify-center">
+              {models.map((model) => {
+                const generatingTitle = `${model.label} generating an image: ${prompt}`;
+                return (<div key={model.modelValue} title={generatingTitle} className='size-64 border animate-pulse grid place-content-center place-items-center gap-3'>
+                  <div className="rounded-3xl bg-slate-200 size-24 mx-auto"></div>
+                  <div className="rounded w-32 h-4 bg-slate-200 text-center font-bold">{model.label}</div>
+                  <div className="rounded w-32 max-h-16 p-1 bg-slate-200 overflow-hidden">{/* FIXME i18n */}Generating: {prompt}</div>
+                </div>)
+              })}
+            </CardContent>
+          </Card>
+        )
+        
+        const results = await Promise.all(
+          models.map((model) => generateImages(prompt, model)))
+        // console.log(results)
+        const images = results.flat()
+        // console.log(images)
+
+        aiState.done({
+          ...aiState.get(),
+          messages: [
+            ...aiState.get().messages,
+            {
+              role: "function",
+              name: "generate_images",
+              content: `image prompt: ${prompt}`,
+            },
+          ]
+        });
+
+        return <>{images.map((image) => {
+          const model = getModelByValue(image.model)
+          const title = model!.label + ': ' + (image.revised_prompt ?? prompt)
+          return (
+            <Card className="m-1 p-3"　key={image.url}>
+              <CardHeader><b>{model!.label}: </b>{image.revised_prompt ?? prompt}</CardHeader>
+              <CardContent className="flex flex-row flex-wrap gap-3 justify-center">
+                <Image src={image.url!} title={title} alt={title} width={256} height={256} className='size-64 border' />
+              </CardContent>
+            </Card>
+          )
+        })}</>
+      } catch (e:any) {
+        if (e.error?.code === 'content_policy_violation')
+          console.log('got contnt policy violation', prompt);
+        else
+          console.log('got error', prompt, e);
+
+        const errorMessage = e.error?.message ?? e.toString()
+        aiState.done({
+          ...aiState.get(),
+          messages: [
+            ...aiState.get().messages,
+            {
+              role: "function",
+              name: "generate_images",
+              content: errorMessage,
+            },
+          ]
+        });
+        if (e.error?.code === 'content_policy_violation') {
+          // https://help.openai.com/en/articles/6338764-are-there-any-restrictions-to-how-i-can-use-dall-e-2-is-there-a-content-policy
+          return <ChatMessage locale={locale} role="assistant">{errorMessage}</ChatMessage>
+        }
+        return <ChatMessage locale={locale} role="assistant">{errorMessage}</ChatMessage>
+      }
+    }
+  };
+  const toolsOrEmpty = doesCallTools ? {
+    tools: {
+      get_flight_info,
+      get_mulai3_app_info,
+      get_current_weather,
+      generate_images,
+    }
+  } : {};
+
   // The `render()` creates a generated, streamable UI.
   //  console.log('model:', aiState.get().model)
   const ui:React.ReactNode = render({
@@ -283,228 +511,7 @@ async function submitUserMessage(locale: string, userInput: string, doesCallTool
       return <ChatMessage locale={locale} role="assistant">{content}</ChatMessage>
     },
     // Some models (fireworks, perplexity) just ignore and some (groq) throw errors
-    ...(doesCallTools ? {
-      tools: {
-        get_flight_info: {
-          description: 'Get the information for a flight',
-          parameters: z.object({
-            flightNumber: z.string().describe('the number of the flight')
-          }).required(),
-          render: async function* ({flightNumber}:{flightNumber:string}) {
-            console.log('get_flight_info', flightNumber);
-            try {
-              // Show a spinner on the client while we wait for the response.
-              yield <Spinner/>
-    
-              // console.log(typeof params)
-    
-              console.log('flight#', flightNumber)
-              // Fetch the flight information from an external API.
-              const flightInfo = await getFlightInfo(flightNumber)
-              console.log('flightInfo:', flightInfo)
-      
-              // Update the final AI state.
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    role: "function",
-                    name: "get_flight_info",
-                    // Content can be any string to provide context to the LLM in the rest of the conversation.
-                    content: JSON.stringify(flightInfo),
-                  }
-              ]});
-    
-              // Return the flight card to the client.
-              return <FlightCard flightInfo={flightInfo} />
-            } catch (e:any) {
-              console.log('got error', e, flightNumber)
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    role: "function",
-                    name: "get_flight_info",
-                    content: e.toString(),
-                  },
-                ]
-              });
-              return <ChatMessage locale={locale} role="assistant">{e.toString()}</ChatMessage>
-            }              
-          }
-        },
-        get_mulai3_app_info: {
-          description: 'Get the information of Mulai3 app',
-          parameters: z.object({}), // no params
-          render: async function* () {
-            console.log('get_mulai3_app_info');
-            try {
-              yield <Spinner />
-              await wait(2000);
-              const appInfo = await getAppInfo()  
-
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    role: "function",
-                    name: "get_mulai3_app_info",
-                    content: JSON.stringify(appInfo),
-                  },
-                ]
-              });
-              await new Promise(resolve => setTimeout(resolve, 2000));
-    
-              return <AppCard appInfo={appInfo} />
-            } catch (e:any) {
-              console.log('got error', e)
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    role: "function",
-                    name: "get_mulai3_app_info",
-                    content: e.toString(),
-                  },
-                ]
-              });
-              return <ChatMessage locale={locale} role="assistant">{e.toString()}</ChatMessage>
-            }            
-          }
-        } as any,
-        get_current_weather: {
-          description: 'Get current weather information of the specified city',
-          parameters: z.object({
-            city: z.string().describe('the city to get current weather')
-          }).required(),
-          render: async function* ({city}:{city:string}) {
-            console.log('get_current_weather', city);
-            try {
-              const weatherInfo = await getCurrentWeather(city)  
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    role: "function",
-                    name: "get_current_weather",
-                    content: JSON.stringify(weatherInfo),
-                  },
-                ]
-              });
-              return <WeatherCardOrError locale={locale} city={city} weatherInfo={weatherInfo} />  
-            } catch (e:any) {
-              console.log('got error', e, city)
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    role: "function",
-                    name: "get_current_weather",
-                    content: e.toString(),
-                  },
-                ]
-              });
-              return <ChatMessage locale={locale} role="assistant">{e.toString()}</ChatMessage>
-            }
-          }
-        } as any,
-        generate_images: {
-          description: 'Generate images based on the given prompt',
-          parameters: z.object({
-            prompt: z.string().describe('the image description to be generated'),
-          }),
-          render: async function* ({prompt}:{prompt:string}) {
-            console.log('generate_images', prompt);
-            try {
-              // You might have multiple models in the array to generate multiple images with the same model
-              const models:ChatModel[] = [
-                'dall-e-2', 
-                'dall-e-3', 
-                'stable-diffusion-2',
-                'stable-image-core',
-                'stable-diffusion-3',
-                'stable-diffusion-3-turbo',
-              ].map((value) => getModelByValue(value) as ChatModel)
-
-              yield (
-                <Card className="m-1 p-3">
-                  <CardContent className="flex flex-row flex-wrap gap-3 justify-center">
-                    {models.map((model) => {
-                      const generatingTitle = `${model.label} generating an image: ${prompt}`;
-                      return (<div key={model.modelValue} title={generatingTitle} className='size-64 border animate-pulse grid place-content-center place-items-center gap-3'>
-                        <div className="rounded-3xl bg-slate-200 size-24 mx-auto"></div>
-                        <div className="rounded w-32 h-4 bg-slate-200 text-center font-bold">{model.label}</div>
-                        <div className="rounded w-32 max-h-16 p-1 bg-slate-200 overflow-hidden">{/* FIXME i18n */}Generating: {prompt}</div>
-                      </div>)
-                    })}
-                  </CardContent>
-                </Card>
-              )
-              
-              const results = await Promise.all(
-                models.map((model) => generateImages(prompt, model)))
-              // console.log(results)
-              const images = results.flat()
-              // console.log(images)
-
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    role: "function",
-                    name: "generate_images",
-                    content: `image prompt: ${prompt}`,
-                  },
-                ]
-              });
-
-              return <>{images.map((image) => {
-                const model = getModelByValue(image.model)
-                const title = model!.label + ': ' + (image.revised_prompt ?? prompt)
-                return (
-                  <Card className="m-1 p-3"　key={image.url}>
-                    <CardHeader><b>{model!.label}: </b>{image.revised_prompt ?? prompt}</CardHeader>
-                    <CardContent className="flex flex-row flex-wrap gap-3 justify-center">
-                      <Image src={image.url!} title={title} alt={title} width={256} height={256} className='size-64 border' />
-                    </CardContent>
-                  </Card>
-                )
-              })}</>
-            } catch (e:any) {
-              if (e.error?.code === 'content_policy_violation')
-                console.log('got contnt policy violation', prompt);
-              else
-                console.log('got error', prompt, e);
-
-              const errorMessage = e.error?.message ?? e.toString()
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    role: "function",
-                    name: "generate_images",
-                    content: errorMessage,
-                  },
-                ]
-              });
-              if (e.error?.code === 'content_policy_violation') {
-                // https://help.openai.com/en/articles/6338764-are-there-any-restrictions-to-how-i-can-use-dall-e-2-is-there-a-content-policy
-                return <ChatMessage locale={locale} role="assistant">{errorMessage}</ChatMessage>
-              }
-              return <ChatMessage locale={locale} role="assistant">{errorMessage}</ChatMessage>
-            }
-          }
-        } as any,
-      },
-    } : {}),
+    ...toolsOrEmpty,
   })
  
   return {

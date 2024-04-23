@@ -59,6 +59,7 @@ export default function EnterableTextarea({className = '', autoFocus, value = ''
         placeholder={placeholder}
         disabled={!!disabled}
         ref={textareaRef}
+        suppressHydrationWarning
       />
     )    
 }
