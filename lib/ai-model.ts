@@ -43,9 +43,11 @@ const allModels0:ChatModel0[] = [
     // fast. in $0.0005/1K tokens, out $0.0015/1K tokens
     {label: 'GPT-3.5', provider: 'openai', modelValue: 'gpt-3.5-turbo', sdkModelValue: 'gpt-3.5-turbo', qualityScore: 118/256*100, japaneseScore: 67, doesToolSupport: true,},
     // in $0.03/1K tokens, out $0.06/1K tokens
-    {label: 'GPT-4', provider: 'openai', modelValue: 'gpt-4', sdkModelValue: 'gpt-4', qualityScore: 254/256*100, japaneseScore: 76, doesToolSupport: true,},
+    // {label: 'GPT-4', provider: 'openai', modelValue: 'gpt-4', sdkModelValue: 'gpt-4', qualityScore: 254/256*100, japaneseScore: 76, doesToolSupport: true,},
     // in $0.01/1K tokens, out $0.03/1K tokens 
     {label: 'GPT-4 Turbo', provider: 'openai', modelValue: 'gpt-4-turbo', sdkModelValue: 'gpt-4-turbo', qualityScore: 253/256*100, japaneseScore: 77, doesToolSupport: true, },
+    // in $5/1M tokens, out $15/M tokens
+    {label: 'GPT-4o', provider: 'openai', modelValue: 'gpt-4o', sdkModelValue: 'gpt-4o', qualityScore: 253/256*100, japaneseScore: 77, maxTokens: 4096, doesSupportTool: true, doesAcceptImageUrl: true, },
 
     // in $15.00 / out $75.00 /1M tokens
     {label: 'Anthropic Claude 3 Sonnet', provider: 'anthropic', modelValue: 'claude-3-sonnet-20240229', sdkModelValue: 'claude-3-sonnet-20240229', qualityScore: 254/256*100, japaneseScore:64, maxTokens: 4096},
@@ -180,7 +182,7 @@ export const allModelValues = allModels0.map(model => model.modelValue);
 
 export function doesModelAcceptImageUrl(modelValue:ModelValue) {
     // Some other models have capabilities but the app implementation is not yet done.
-    return modelValue === 'gpt-4-vision-preview' || modelValue === 'firellava-13b'
+    return modelValue === 'gpt-4o' || modelValue === 'firellava-13b'
     || modelValue === 'gemini-pro-vision'
     // return true
 }

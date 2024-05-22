@@ -30,6 +30,11 @@ export default function RootLayout({
           <a className='flex-1 text-xl hover:text-teal-100 active:text-teal-50  whitespace-nowrap' href="/"><h1>
           <strong className="font-bold">MulAI3</strong>
           </h1></a>
+          <a className="mx-4 text-lg" 
+                    href="https://forms.gle/7TrHHb1mfRmwjg8R6"
+                    target="_blank" rel="noopener noreferrer">{
+                      (locale == 'ja') ? 'アンケートにご協力ください!' : 'Plase help us improve the service!'
+                    }</a>            
           <Suspense>
             {/* <ModelLinks
               className="focus-visible:outline-none ml-2 mr-1 hover:text-teal-100 active:text-teal-50" /> */}
