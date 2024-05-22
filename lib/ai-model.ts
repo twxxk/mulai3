@@ -47,7 +47,7 @@ const allModels0:ChatModel0[] = [
     // in $0.01/1K tokens, out $0.03/1K tokens 
     {label: 'GPT-4 Turbo', provider: 'openai', modelValue: 'gpt-4-turbo', sdkModelValue: 'gpt-4-turbo', qualityScore: 253/256*100, japaneseScore: 77, doesToolSupport: true, },
     // in $5/1M tokens, out $15/M tokens
-    {label: 'GPT-4o', provider: 'openai', modelValue: 'gpt-4o', sdkModelValue: 'gpt-4o', qualityScore: 253/256*100, japaneseScore: 77, maxTokens: 4096, doesSupportTool: true, doesAcceptImageUrl: true, },
+    {label: 'GPT-4o', provider: 'openai', modelValue: 'gpt-4o', sdkModelValue: 'gpt-4o', qualityScore: 253/256*100, japaneseScore: 77, maxTokens: 4096, doesToolSupport: true, },
 
     // in $15.00 / out $75.00 /1M tokens
     {label: 'Anthropic Claude 3 Sonnet', provider: 'anthropic', modelValue: 'claude-3-sonnet-20240229', sdkModelValue: 'claude-3-sonnet-20240229', qualityScore: 254/256*100, japaneseScore:64, maxTokens: 4096},
