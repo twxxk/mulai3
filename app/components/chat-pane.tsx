@@ -12,7 +12,7 @@ import EnterableTextarea from './enterable-textarea';
 import { SendIcon } from 'lucide-react';
 
 const openaiCompatibleTextModels = allModels.filter((model) => {
-  return openAiCompatipleProviders.indexOf(model.provider) >= 0 && model.modelValue !== 'gpt-4o'
+  return openAiCompatipleProviders.indexOf(model.provider) >= 0
 })
 
 function configureHistoryAutoScroll(historyElementRef:any) {
